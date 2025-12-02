@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+*.venv
+fortify-venv/
+
+# VS Code
+.vscode/
+
+# Node (if using dashboard)
+node_modules/
+dist/

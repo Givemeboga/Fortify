@@ -1,0 +1,9 @@
+aiohttp
+beautifulsoup4
+cryptography
+fastapi
+uvicorn
+python-nmap
+requests
+typer
+pydantic
