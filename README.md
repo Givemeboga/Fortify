@@ -1,19 +1,53 @@
-# Fortify
+<p align="center">
+  <img src="FortifyLogo.png" alt="Fortify Logo" width="280" />
+</p>
 
-**Fortify** is an open-source web application security tool that helps developers and security professionals identify vulnerabilities and improve web app defenses. It consists of three main parts:
+<h1 align="center">Fortify</h1>
 
-1. **Scanner**: A Python-based module that tests web applications for common security issues.  
-2. **AI Analyzer**: An AI engine that reads scanner output files, calculates risk levels, and provides suggestions for improving the security of the tested web app.  
-3. **Dashboard**: A frontend interface to visualize scan results, vulnerabilities, and risk assessments.
+<p align="center">
+  <b>Open-source web application security scanner powered by AI</b>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.10+-blue?style=flat-square&logo=python" alt="Python 3.10+" />
+  <img src="https://img.shields.io/badge/fastapi-backend-009688?style=flat-square&logo=fastapi" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License" />
+  <img src="https://img.shields.io/badge/status-active-brightgreen?style=flat-square" alt="Status" />
+</p>
+
+---
+
+## Overview
+
+**Fortify** is an open-source web application security tool that helps developers and security professionals identify vulnerabilities and improve web app defenses. It consists of three main components:
+
+| Component | Description |
+|---|---|
+| **Scanner** | Python-based module that tests web apps for common security issues (headers, injections, misconfigurations) |
+| **AI Analyzer** | AI engine that reads scanner output, calculates risk levels, and gives actionable remediation suggestions |
+| **Dashboard** | Frontend interface to visualize scan results, vulnerabilities, and risk assessments |
 
 ---
 
 ## Features
 
-- Web app security scanning (headers, injections, misconfigurations)  
-- Risk calculation and vulnerability analysis using AI  
-- Interactive dashboard to visualize findings  
-- Modular and extendable architecture  
+- Web app security scanning — HTTP headers, injection vectors, misconfigurations
+- AI-powered risk scoring and vulnerability analysis
+- Interactive dashboard to visualize findings
+- FastAPI backend with Uvicorn for fast, async performance
+- Modular and extensible architecture
+
+---
+
+## Project Structure
+
+```
+Fortify/
+├── fortify-backend/        # FastAPI backend & scanner logic
+├── fortify-dashboard/      # Frontend dashboard (Node.js)
+├── requirements.txt        # Python dependencies
+└── README.md
+```
 
 ---
 
@@ -21,39 +55,41 @@
 
 ### Prerequisites
 
-- WSL2 (for Windows users) or Linux/macOS  
-- Python 3.10+  
-- Node.js (for the dashboard)  
+- Python 3.10+
+- Node.js (for the dashboard)
+- WSL2 (Windows users) or Linux/macOS
 
-### Setup
+### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/Fortify.git
+git clone https://github.com/Givemeboga/Fortify.git
 cd Fortify
 
-# Create and activate the virtual environment
+# Create and activate a virtual environment
 python3 -m venv fortify-venv
-source fortify-venv/bin/activate
+source fortify-venv/bin/activate  # Windows: fortify-venv\Scripts\activate
 
 # Install Python dependencies
 pip install -r requirements.txt
+```
 
 ---
 
 ## Running
 
-### Running the Backend
+### Backend
 
-Run the backend with Uvicorn from the project root:
+Run the FastAPI backend from the project root:
 
 ```bash
 uvicorn fortify-backend.main:app --reload --port 8500
 ```
 
-### Running the Dashboard
+The API will be available at `http://localhost:8500`.  
+Interactive docs are at `http://localhost:8500/docs`.
 
-Start the dashboard development server:
+### Dashboard
 
 ```bash
 cd fortify-dashboard
@@ -61,10 +97,22 @@ npm install
 npm run dev
 ```
 
-### Contributing
+---
 
-- Fork the repository
-- Create a branch: `git checkout -b feature/your-feature`
-- Commit your changes: `git commit -m "Add your feature"`
-- Push to your branch: `git push origin feature/your-feature`
-- Open a pull request
+## Contributing
+
+Contributions are welcome! Here's how to get started:
+
+1. Fork the repository
+2. Create a branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m "Add your feature"`
+4. Push to your branch: `git push origin feature/your-feature`
+5. Open a pull request
+
+Please make sure your code is clean and tested before submitting.
+
+---
+
+## License
+
+This project is open-source. See [LICENSE](LICENSE) for details.
