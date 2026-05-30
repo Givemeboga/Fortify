@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="FortifyLogo.png" alt="Fortify Logo" width="280" />
+  <img src="assets/FortifyLogo.png" alt="Fortify Logo" width="200" style="border-radius: 50%;" />
 </p>
 
 <h1 align="center">Fortify</h1>
@@ -43,9 +43,11 @@
 
 ```
 Fortify/
+├── assets/                 # Static assets (logo, images)
 ├── fortify-backend/        # FastAPI backend & scanner logic
 ├── fortify-dashboard/      # Frontend dashboard (Node.js)
 ├── requirements.txt        # Python dependencies
+├── LICENSE
 └── README.md
 ```
 
@@ -115,4 +117,4 @@ Please make sure your code is clean and tested before submitting.
 
 ## License
 
-This project is open-source. See [LICENSE](LICENSE) for details.
+This project is licensed under the [MIT License](LICENSE) © 2026 Youssef Ben Chaouacha.
