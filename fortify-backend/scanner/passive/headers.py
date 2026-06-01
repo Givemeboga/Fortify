@@ -1,17 +1,14 @@
 import requests
+import json
+from pathlib import Path
 
-DEFENSIVE_HEADERS = [
-    "Content-Security-Policy",
-    "Strict-Transport-Security",
-    "X-Frame-Options",
-    "X-Content-Type-Options",
-    "Referrer-Policy",
-]
+CONFIG_PATH = Path(__file__).parent.parent /"config" / "headers.json"
 
-LEAKY_HEADERS = [
-    "Server",
-    "X-Powered-By",
-]
+with open(CONFIG_PATH) as f:
+    config = json.load(f)
+
+DEFENSIVE_HEADERS = config["defensive"]
+LEAKY_HEADERS = config["leaky"]
 
 def scan_headers(url: str) -> dict:
     try:
