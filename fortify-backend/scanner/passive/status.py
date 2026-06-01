@@ -20,8 +20,8 @@ def scan_paths(base: str) -> dict:
         full_url = base.rstrip("/") + path
 
         try:
-            # Using HEAD: no body = less bandwidth + stays passive.
-            # Caveat: some servers mishandle HEAD; may need GET fallback later.
+            # Using GET for reliable detection (some servers mishandle HEAD).
+            # Body is intentionally discarded to stay passive. See issue #2 for HEAD optimization.
             response = requests.get(full_url)
             results[path] = {
                 "status_code" : response.status_code,
