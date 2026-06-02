@@ -5,7 +5,7 @@
 <h1 align="center">Fortify</h1>
 
 <p align="center">
-  <b>Open-source web application security scanner powered by AI</b>
+  <b>Open-source web application security scanner with AI-assisted analysis</b>
 </p>
 
 <p align="center">
@@ -21,21 +21,34 @@
 
 **Fortify** is an open-source web application security tool that helps developers and security professionals identify vulnerabilities and improve web app defenses. It consists of three main components:
 
-| Component | Description |
-|---|---|
-| **Scanner** | Python-based module that tests web apps for common security issues (headers, injections, misconfigurations) |
-| **AI Analyzer** | AI engine that reads scanner output, calculates risk levels, and gives actionable remediation suggestions |
-| **Dashboard** | Frontend interface to visualize scan results, vulnerabilities, and risk assessments |
+| Component | Description | Status |
+|---|---|---|
+| **Scanner** | Python module that tests web apps for common security issues (headers, TLS, misconfigurations, injections) | 🟢 Passive checks built · 🟡 Active checks planned |
+| **AI Analyzer** | AI engine that reads scanner output, calculates risk levels, and gives actionable remediation suggestions | 🟡 Planned |
+| **Dashboard** | Frontend interface to visualize scan results, vulnerabilities, and risk assessments | 🟡 Planned |
 
 ---
 
-## Features
+## Roadmap
 
-- Web app security scanning — HTTP headers, injection vectors, misconfigurations
-- AI-powered risk scoring and vulnerability analysis
-- Interactive dashboard to visualize findings
-- FastAPI backend with Uvicorn for fast, async performance
-- Modular and extensible architecture
+Fortify is built in phases. This table reflects the **actual** current state.
+
+| Phase | Scope | Status |
+|---|---|---|
+| **1 — Scanner core** | Passive checks (TLS, headers, sensitive paths) | ✅ Done |
+| | Active checks (SQLi, XSS, path traversal) | ⬜ Next |
+| **2 — Backend + DB** | FastAPI endpoints + SQLite result storage | 🚧 In progress |
+| **3 — AI Analyzer** | Claude-powered risk scoring & remediation | ⬜ Planned |
+| **4 — Dashboard** | React + Tailwind visualization | ⬜ Planned |
+| **5 — Polish** | PDF export, Docker, demo | ⬜ Planned |
+
+### What works today
+
+The **passive scanner** is functional. It runs read-only checks against a target and returns a single structured result:
+
+- **TLS** — protocol version, certificate expiry/validity, cipher suite
+- **Headers** — missing defensive headers, present headers, leaky (version-disclosing) headers, redirect chain
+- **Sensitive paths** — probes common exposed paths (`/.env`, `/.git/`, `/admin`, …) and records status codes
 
 ---
 
@@ -43,10 +56,20 @@
 
 ```
 Fortify/
-├── assets/                 # Static assets (logo, images)
-├── fortify-backend/        # FastAPI backend & scanner logic
-├── fortify-dashboard/      # Frontend dashboard (Node.js)
-├── requirements.txt        # Python dependencies
+├── assets/                      # Static assets (logo, images)
+├── fortify-backend/             # FastAPI backend & scanner logic
+│   ├── main.py                  # FastAPI entry point
+│   └── scanner/
+│       ├── passive/             # Read-only checks (safe)
+│       │   ├── tls.py           # TLS version, cert, cipher
+│       │   ├── headers.py       # Security & leaky headers
+│       │   ├── status.py        # Sensitive-path probing
+│       │   └── runner.py        # Orchestrates a full passive scan
+│       ├── active/              # Injection checks (planned)
+│       └── config/
+│           ├── headers.json     # Header lists (config)
+│           └── paths.txt        # Sensitive-path wordlist
+├── requirements.txt             # Python dependencies
 ├── LICENSE
 └── README.md
 ```
@@ -69,8 +92,8 @@ git clone https://github.com/Givemeboga/Fortify.git
 cd Fortify
 
 # Create and activate a virtual environment
-python3 -m venv fortify-venv
-source fortify-venv/bin/activate  # Windows: fortify-venv\Scripts\activate
+python -m venv venv
+source venv/bin/activate          # Windows: venv\Scripts\activate
 
 # Install Python dependencies
 pip install -r requirements.txt
@@ -78,26 +101,41 @@ pip install -r requirements.txt
 
 ---
 
-## Running
+## Usage
 
-### Backend
+### Run a passive scan (available now)
 
-Run the FastAPI backend from the project root:
+From inside `fortify-backend/`:
+
+```python
+from scanner.passive.runner import run_passive_scan
+import json
+
+result = run_passive_scan("https://example.com")
+print(json.dumps(result, indent=2))
+```
+
+Returns a single nested dictionary with `tls`, `headers`, and `status` sections — ready to be stored, served over an API, or analyzed.
+
+### Backend API (in progress)
+
+Once Phase 2 lands, the FastAPI backend will run from the project root:
 
 ```bash
 uvicorn fortify-backend.main:app --reload --port 8500
 ```
 
-The API will be available at `http://localhost:8500`.  
-Interactive docs are at `http://localhost:8500/docs`.
+The API will be available at `http://localhost:8500`, with interactive docs at `http://localhost:8500/docs`.
 
-### Dashboard
+### Dashboard (planned)
 
-```bash
-cd fortify-dashboard
-npm install
-npm run dev
-```
+The React dashboard arrives in Phase 4.
+
+---
+
+## ⚠️ Legal & Ethical Use
+
+Fortify is intended for **authorized security testing only**. Only scan systems you **own** or have **explicit written permission** to test. Unauthorized scanning of systems you do not control may be illegal under computer-misuse laws (e.g. the CFAA in the US and equivalents elsewhere). You are solely responsible for how you use this tool.
 
 ---
 
