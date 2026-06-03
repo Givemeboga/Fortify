@@ -37,7 +37,8 @@ Fortify is built in phases. This table reflects the **actual** current state.
 |---|---|---|
 | **1 — Scanner core** | Passive checks (TLS, headers, sensitive paths) | ✅ Done |
 | | Active checks (SQLi, XSS, path traversal) | ⬜ Next |
-| **2 — Backend + DB** | FastAPI endpoints + SQLite result storage | 🚧 In progress |
+| **2 — Backend + DB** | SQLite result storage (data layer) | ✅ Done |
+| | FastAPI endpoints (trigger & retrieve scans) | 🚧 In progress |
 | **3 — AI Analyzer** | Claude-powered risk scoring & remediation | ⬜ Planned |
 | **4 — Dashboard** | React + Tailwind visualization | ⬜ Planned |
 | **5 — Polish** | PDF export, Docker, demo | ⬜ Planned |
@@ -50,6 +51,8 @@ The **passive scanner** is functional. It runs read-only checks against a target
 - **Headers** — missing defensive headers, present headers, leaky (version-disclosing) headers, redirect chain
 - **Sensitive paths** — probes common exposed paths (`/.env`, `/.git/`, `/admin`, …) and records status codes
 
+Scan results are persisted to a local **SQLite** database (`db.py`) with a full create → update → retrieve lifecycle, storing the nested result as JSON.
+
 ---
 
 ## Project Structure
@@ -59,6 +62,7 @@ Fortify/
 ├── assets/                      # Static assets (logo, images)
 ├── fortify-backend/             # FastAPI backend & scanner logic
 │   ├── main.py                  # FastAPI entry point
+│   ├── db.py                    # SQLite data layer (scan persistence)
 │   └── scanner/
 │       ├── passive/             # Read-only checks (safe)
 │       │   ├── tls.py           # TLS version, cert, cipher
