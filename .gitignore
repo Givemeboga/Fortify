@@ -13,3 +13,9 @@ fortify-venv/
 # Node (if using dashboard)
 node_modules/
 dist/
+
+#Database
+*.db
+
+#Virtual environment
+venv/
