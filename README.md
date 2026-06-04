@@ -38,7 +38,7 @@ Fortify is built in phases. This table reflects the **actual** current state.
 | **1 — Scanner core** | Passive checks (TLS, headers, sensitive paths) | ✅ Done |
 | | Active checks (SQLi, XSS, path traversal) | ⬜ Next |
 | **2 — Backend + DB** | SQLite result storage (data layer) | ✅ Done |
-| | FastAPI endpoints (trigger & retrieve scans) | 🚧 In progress |
+| | FastAPI endpoints (trigger & retrieve scans) | ✅ Done |
 | **3 — AI Analyzer** | Claude-powered risk scoring & remediation | ⬜ Planned |
 | **4 — Dashboard** | React + Tailwind visualization | ⬜ Planned |
 | **5 — Polish** | PDF export, Docker, demo | ⬜ Planned |
@@ -52,6 +52,16 @@ The **passive scanner** is functional. It runs read-only checks against a target
 - **Sensitive paths** — probes common exposed paths (`/.env`, `/.git/`, `/admin`, …) and records status codes
 
 Scan results are persisted to a local **SQLite** database (`db.py`) with a full create → update → retrieve lifecycle, storing the nested result as JSON.
+
+The **FastAPI backend** exposes this over HTTP. Scans run in the background, so a request returns immediately with an ID and the client polls for the result:
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/scan` | Validate a target URL, start a background passive scan, return the scan ID with `status: pending` |
+| `GET` | `/scans` | List all scans (newest first) |
+| `GET` | `/scans/{id}` | Retrieve one scan by ID (`404` if not found) |
+
+Invalid URLs are rejected with `422` at the API boundary (Pydantic `HttpUrl` validation).
 
 ---
 
@@ -121,15 +131,27 @@ print(json.dumps(result, indent=2))
 
 Returns a single nested dictionary with `tls`, `headers`, and `status` sections — ready to be stored, served over an API, or analyzed.
 
-### Backend API (in progress)
+### Backend API (available now)
 
-Once Phase 2 lands, the FastAPI backend will run from the project root:
+Run the FastAPI backend from inside `fortify-backend/`:
 
 ```bash
-uvicorn fortify-backend.main:app --reload --port 8500
+uvicorn main:app --reload --port 8500
 ```
 
-The API will be available at `http://localhost:8500`, with interactive docs at `http://localhost:8500/docs`.
+The API is available at `http://localhost:8500`, with interactive Swagger docs at `http://localhost:8500/docs`.
+
+Example — start a scan, then retrieve it:
+
+```bash
+# start a scan (returns an id immediately)
+curl -X POST http://localhost:8500/scan \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com"}'
+
+# retrieve the result by id
+curl http://localhost:8500/scans/1
+```
 
 ### Dashboard (planned)
 
