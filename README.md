@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/FortifyLogo.png" alt="Fortify Logo" width="200" style="border-radius: 50%;" />
+  <img src="assets/FortifyLogoCircle.png" alt="Fortify Logo" width="200" />
 </p>
 
 <h1 align="center">Fortify</h1>
