@@ -1,8 +1,4 @@
 <p align="center">
-  <img src="assets/landing-hero.png" alt="Fortify — hold the wall" width="100%" />
-</p>
-
-<p align="center">
   <img src="assets/FortifyLogoCircle.png" alt="Fortify Logo" width="140" />
 </p>
 
@@ -17,6 +13,10 @@
   <img src="https://img.shields.io/badge/fastapi-backend-009688?style=flat-square&logo=fastapi" alt="FastAPI" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License" />
   <img src="https://img.shields.io/badge/status-active-brightgreen?style=flat-square" alt="Status" />
+</p>
+
+<p align="center">
+  <img src="assets/landing-hero.png" alt="Fortify — hold the wall" width="100%" />
 </p>
 
 ---
