@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/hero-cyber.png" alt="Fortify — hold the wall" width="100%" />
+  <img src="assets/landing-hero.png" alt="Fortify — hold the wall" width="100%" />
 </p>
 
 <p align="center">
@@ -30,6 +30,44 @@
 | **Scanner** | Python module that tests web apps for common security issues (headers, TLS, misconfigurations, injections) | 🟢 Passive checks built · 🟡 Active checks planned |
 | **AI Analyzer** | AI engine that reads scanner output, calculates risk levels, and gives actionable remediation suggestions | 🟡 Planned |
 | **Dashboard** | Frontend interface to visualize scan results, vulnerabilities, and risk assessments | 🟡 Planned |
+
+---
+
+## 🏰 Landing Page
+
+A look at the Fortify landing page — the medieval-fortress metaphor carried through the whole experience.
+
+<p align="center">
+  <img src="assets/landing-1.png" alt="Live scanner demo — point it at a gate and watch" width="90%" />
+</p>
+
+<p align="center"><i>See it defend — point Fortify at a URL and watch it probe the perimeter.</i></p>
+
+<p align="center">
+  <img src="assets/landing-3.png" alt="Three walls, one stronghold — Scanner, AI Analyzer, Dashboard" width="90%" />
+</p>
+
+<p align="center"><i>Three walls, one stronghold — the Scanner, AI Analyzer, and Dashboard.</i></p>
+
+<p align="center">
+  <img src="assets/landing-4.png" alt="A bestiary of threats — XSS, CSRF, Clickjacking, Weak TLS" width="90%" />
+</p>
+
+<p align="center"><i>A bestiary of threats — the classes of vulnerability Fortify is built to repel.</i></p>
+
+<p align="center">
+  <img src="assets/landing-5.png" alt="The siege log — point it at a URL, scan, receive the ranked fix list" width="90%" />
+</p>
+
+<p align="center"><i>The siege log — from a URL to a ranked, prioritized fix list.</i></p>
+
+<p align="center">
+  <img src="assets/landing-6.png" alt="Raise your own fort — free and open source" width="90%" />
+</p>
+
+<p align="center"><i>Free and open source — clone the pipeline and hold the walls in minutes.</i></p>
+
+> **Note:** the landing page is a design mock; the scanner panel is illustrative. The real, wired-up dashboard arrives in Phase 4.
 
 ---
 
