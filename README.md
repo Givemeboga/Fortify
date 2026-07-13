@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="assets/FortifyLogoCircle.png" alt="Fortify Logo" width="200" />
+  <img src="assets/hero-cyber.png" alt="Fortify — hold the wall" width="100%" />
+</p>
+
+<p align="center">
+  <img src="assets/FortifyLogoCircle.png" alt="Fortify Logo" width="140" />
 </p>
 
 <h1 align="center">Fortify</h1>
@@ -36,7 +40,8 @@ Fortify is built in phases. This table reflects the **actual** current state.
 | Phase | Scope | Status |
 |---|---|---|
 | **1 — Scanner core** | Passive checks (TLS, headers, sensitive paths) | ✅ Done |
-| | Active checks (SQLi, XSS, path traversal) | ⬜ Next |
+| | Active checks — SQLi (error-based, query params) | ✅ Done |
+| | Active checks — XSS, path traversal | 🚧 In progress |
 | **2 — Backend + DB** | SQLite result storage (data layer) | ✅ Done |
 | | FastAPI endpoints (trigger & retrieve scans) | ✅ Done |
 | **3 — AI Analyzer** | Claude-powered risk scoring & remediation | ⬜ Planned |
@@ -63,6 +68,10 @@ The **FastAPI backend** exposes this over HTTP. Scans run in the background, so 
 
 Invalid URLs are rejected with `422` at the API boundary (Pydantic `HttpUrl` validation).
 
+The **active scanner** (injection-based, opt-in) has its first check working:
+
+- **SQL injection** — injects payloads into each URL query parameter and flags a parameter when the response leaks a database error signature. Reports the vulnerable parameter, the triggering payload, and the matched signature, plus scan-health counters (`requests_made`, `errors`) so a failed scan is never mistaken for a clean one.
+
 ---
 
 ## Project Structure
@@ -79,10 +88,14 @@ Fortify/
 │       │   ├── headers.py       # Security & leaky headers
 │       │   ├── status.py        # Sensitive-path probing
 │       │   └── runner.py        # Orchestrates a full passive scan
-│       ├── active/              # Injection checks (planned)
+│       ├── active/              # Injection checks (opt-in)
+│       │   ├── injector.py      # Injects a payload into each query param
+│       │   └── sqli.py          # Error-based SQL injection detection
 │       └── config/
 │           ├── headers.json     # Header lists (config)
-│           └── paths.txt        # Sensitive-path wordlist
+│           ├── paths.txt        # Sensitive-path wordlist
+│           ├── sqli_payloads.txt # SQL injection payloads
+│           └── sql_errors.txt   # DB error signatures
 ├── requirements.txt             # Python dependencies
 ├── LICENSE
 └── README.md
