@@ -2,26 +2,38 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException
 from pydantic import BaseModel, HttpUrl
 
 from db import init_db, create_scan, update_scan_results, get_scan, get_all_scans
+
 from scanner.passive.runner import run_passive_scan
+from scanner.active.runner import run_active_scan
+
+from enum import Enum
+
+class ScanType(str, Enum):
+    passive = "passive"
+    active = "active"
 
 app = FastAPI()
 init_db()
 
 class ScanRequest(BaseModel):
     url: HttpUrl
+    scan_type: ScanType = ScanType.passive   # default to the safe option
 
-def run_and_store(scan_id: int, url: str):
+def run_and_store(scan_id: int, url: str, scan_type: ScanType):
     try:
-        results = run_passive_scan(url)
+        if scan_type == ScanType.active:
+            results = run_active_scan(url)
+        else:
+            results = run_passive_scan(url)
         update_scan_results(scan_id, results, "completed")
     except Exception as e:
         update_scan_results(scan_id, {"error": str(e)}, "failed")
 
 @app.post("/scan")
 def start_scan(request: ScanRequest, background_tasks: BackgroundTasks):
-    scan_id = create_scan(str(request.url), "passive")
+    scan_id = create_scan(str(request.url), request.scan_type.value)
 
-    background_tasks.add_task(run_and_store, scan_id, str(request.url))
+    background_tasks.add_task(run_and_store, scan_id, str(request.url), request.scan_type)
 
     return {"id": scan_id, "status": "pending"}
 

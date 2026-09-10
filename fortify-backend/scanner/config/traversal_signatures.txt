@@ -1,0 +1,6 @@
+root:x:0:0
+root:.*:0:0:
+daemon:
+[fonts]
+[extensions]
+for 16-bit app support
