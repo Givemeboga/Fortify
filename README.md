@@ -28,7 +28,7 @@
 | Component | Description | Status |
 |---|---|---|
 | **Scanner** | Python module that tests web apps for common security issues (headers, TLS, misconfigurations, injections) | 🟢 Complete — passive + active |
-| **AI Analyzer** | AI engine that reads scanner output, calculates risk levels, and gives actionable remediation suggestions | 🟡 Next |
+| **AI Analyzer** | LLM engine that reads scanner output, calculates risk levels, and gives actionable remediation — runs on a **local model (Ollama)** by default so scan data never leaves your machine; backend is pluggable | 🟡 Next |
 | **Dashboard** | Frontend interface to visualize scan results, vulnerabilities, and risk assessments | 🟡 Planned |
 
 ---
@@ -81,7 +81,7 @@ Fortify is built in phases. This table reflects the **actual** current state.
 | | Active checks (SQLi, XSS, path traversal) | ✅ Done |
 | **2 — Backend + DB** | SQLite result storage (data layer) | ✅ Done |
 | | FastAPI endpoints (trigger & retrieve scans) | ✅ Done |
-| **3 — AI Analyzer** | Claude-powered risk scoring & remediation | ⬜ Next |
+| **3 — AI Analyzer** | LLM risk scoring & remediation — local by default (Ollama), pluggable backend | ⬜ Next |
 | **4 — Dashboard** | React + Tailwind visualization | ⬜ Planned |
 | **5 — Polish** | PDF export, Docker, demo | ⬜ Planned |
 
