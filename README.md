@@ -27,8 +27,8 @@
 
 | Component | Description | Status |
 |---|---|---|
-| **Scanner** | Python module that tests web apps for common security issues (headers, TLS, misconfigurations, injections) | 🟢 Passive checks built · 🟡 Active checks planned |
-| **AI Analyzer** | AI engine that reads scanner output, calculates risk levels, and gives actionable remediation suggestions | 🟡 Planned |
+| **Scanner** | Python module that tests web apps for common security issues (headers, TLS, misconfigurations, injections) | 🟢 Complete — passive + active |
+| **AI Analyzer** | AI engine that reads scanner output, calculates risk levels, and gives actionable remediation suggestions | 🟡 Next |
 | **Dashboard** | Frontend interface to visualize scan results, vulnerabilities, and risk assessments | 🟡 Planned |
 
 ---
@@ -78,11 +78,10 @@ Fortify is built in phases. This table reflects the **actual** current state.
 | Phase | Scope | Status |
 |---|---|---|
 | **1 — Scanner core** | Passive checks (TLS, headers, sensitive paths) | ✅ Done |
-| | Active checks — SQLi (error-based, query params) | ✅ Done |
-| | Active checks — XSS, path traversal | 🚧 In progress |
+| | Active checks (SQLi, XSS, path traversal) | ✅ Done |
 | **2 — Backend + DB** | SQLite result storage (data layer) | ✅ Done |
 | | FastAPI endpoints (trigger & retrieve scans) | ✅ Done |
-| **3 — AI Analyzer** | Claude-powered risk scoring & remediation | ⬜ Planned |
+| **3 — AI Analyzer** | Claude-powered risk scoring & remediation | ⬜ Next |
 | **4 — Dashboard** | React + Tailwind visualization | ⬜ Planned |
 | **5 — Polish** | PDF export, Docker, demo | ⬜ Planned |
 
@@ -96,19 +95,23 @@ The **passive scanner** is functional. It runs read-only checks against a target
 
 Scan results are persisted to a local **SQLite** database (`db.py`) with a full create → update → retrieve lifecycle, storing the nested result as JSON.
 
-The **FastAPI backend** exposes this over HTTP. Scans run in the background, so a request returns immediately with an ID and the client polls for the result:
+The **active scanner** (injection-based, opt-in) is complete — it injects payloads into each URL query parameter and reports the vulnerable parameter, the triggering payload, the matched signal, and scan-health counters (`requests_made`, `errors`) so a failed scan is never mistaken for a clean one:
+
+- **SQL injection** — flags a parameter when an injected payload makes the response leak a database error signature.
+- **Cross-site scripting (XSS)** — flags a parameter when an injected script payload is reflected back **unescaped** (exact-match, so escaped reflections are correctly cleared).
+- **Path traversal** — flags a parameter when a `../`-style payload makes the response leak system-file contents (e.g. `/etc/passwd`).
+
+Active scanning is **opt-in and consent-gated**: it only runs when the request explicitly asks for it.
+
+The **FastAPI backend** exposes all of this over HTTP. Scans run in the background, so a request returns immediately with an ID and the client polls for the result:
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/scan` | Validate a target URL, start a background passive scan, return the scan ID with `status: pending` |
+| `POST` | `/scan` | Validate a target URL, start a background scan (`scan_type`: `passive` default, or `active`), return the scan ID with `status: pending` |
 | `GET` | `/scans` | List all scans (newest first) |
 | `GET` | `/scans/{id}` | Retrieve one scan by ID (`404` if not found) |
 
-Invalid URLs are rejected with `422` at the API boundary (Pydantic `HttpUrl` validation).
-
-The **active scanner** (injection-based, opt-in) has its first check working:
-
-- **SQL injection** — injects payloads into each URL query parameter and flags a parameter when the response leaks a database error signature. Reports the vulnerable parameter, the triggering payload, and the matched signature, plus scan-health counters (`requests_made`, `errors`) so a failed scan is never mistaken for a clean one.
+Invalid URLs and unknown `scan_type` values are rejected with `422` at the API boundary (Pydantic validation).
 
 ---
 
@@ -128,12 +131,18 @@ Fortify/
 │       │   └── runner.py        # Orchestrates a full passive scan
 │       ├── active/              # Injection checks (opt-in)
 │       │   ├── injector.py      # Injects a payload into each query param
-│       │   └── sqli.py          # Error-based SQL injection detection
+│       │   ├── sqli.py          # Error-based SQL injection detection
+│       │   ├── xss.py           # Reflected-XSS detection
+│       │   ├── path_traversal.py # Path-traversal detection
+│       │   └── runner.py        # Orchestrates a full active scan
 │       └── config/
-│           ├── headers.json     # Header lists (config)
-│           ├── paths.txt        # Sensitive-path wordlist
-│           ├── sqli_payloads.txt # SQL injection payloads
-│           └── sql_errors.txt   # DB error signatures
+│           ├── headers.json         # Header lists (config)
+│           ├── paths.txt            # Sensitive-path wordlist
+│           ├── sqli_payloads.txt    # SQL injection payloads
+│           ├── sql_errors.txt       # DB error signatures
+│           ├── xss_payloads.txt     # XSS payloads
+│           ├── traversal_payloads.txt   # Path-traversal payloads
+│           └── traversal_signatures.txt # System-file content signatures
 ├── requirements.txt             # Python dependencies
 ├── LICENSE
 └── README.md
