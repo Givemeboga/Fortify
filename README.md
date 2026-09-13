@@ -28,8 +28,8 @@
 | Component | Description | Status |
 |---|---|---|
 | **Scanner** | Python module that tests web apps for common security issues (headers, TLS, misconfigurations, injections) | 🟢 Complete — passive + active |
-| **AI Analyzer** | LLM engine that reads scanner output, calculates risk levels, and gives actionable remediation — runs on a **local model (Ollama)** by default so scan data never leaves your machine; backend is pluggable | 🟡 Next |
-| **Dashboard** | Frontend interface to visualize scan results, vulnerabilities, and risk assessments | 🟡 Planned |
+| **AI Analyzer** | LLM engine that reads scanner output, calculates risk levels, and gives actionable remediation — runs on a **local model (Ollama)** by default so scan data never leaves your machine; backend is pluggable | 🟢 Working (hardening in progress) |
+| **Dashboard** | Frontend interface to visualize scan results, vulnerabilities, and risk assessments | 🟡 Next |
 
 ---
 
@@ -81,8 +81,8 @@ Fortify is built in phases. This table reflects the **actual** current state.
 | | Active checks (SQLi, XSS, path traversal) | ✅ Done |
 | **2 — Backend + DB** | SQLite result storage (data layer) | ✅ Done |
 | | FastAPI endpoints (trigger & retrieve scans) | ✅ Done |
-| **3 — AI Analyzer** | LLM risk scoring & remediation — local by default (Ollama), pluggable backend | ⬜ Next |
-| **4 — Dashboard** | React + Tailwind visualization | ⬜ Planned |
+| **3 — AI Analyzer** | LLM risk scoring & remediation — local by default (Ollama), pluggable backend | ✅ Core done · 🚧 hardening |
+| **4 — Dashboard** | React + Tailwind visualization | ⬜ Next |
 | **5 — Polish** | PDF export, Docker, demo | ⬜ Planned |
 
 ### What works today
@@ -110,8 +110,13 @@ The **FastAPI backend** exposes all of this over HTTP. Scans run in the backgrou
 | `POST` | `/scan` | Validate a target URL, start a background scan (`scan_type`: `passive` default, or `active`), return the scan ID with `status: pending` |
 | `GET` | `/scans` | List all scans (newest first) |
 | `GET` | `/scans/{id}` | Retrieve one scan by ID (`404` if not found) |
+| `POST` | `/scans/{id}/analyze` | Run the AI Analyzer on a completed scan and store the result (`404` if not found, `409` if the scan is not completed yet) |
 
 Invalid URLs and unknown `scan_type` values are rejected with `422` at the API boundary (Pydantic validation).
+
+The **AI Analyzer** turns raw scan facts into an interpreted risk report. It sends the results to a **local LLM via [Ollama](https://ollama.com)** (default model `llama3.1:8b`) and returns a structured assessment: an overall risk score/level, a plain-language summary, per-finding severity + remediation, and a prioritized fix order. Because the model runs locally, **scan data never leaves your machine** — fitting for a tool that maps a target's weaknesses. The LLM backend is provider-agnostic (a cloud option is planned — see issues).
+
+> ⚠️ **AI output is guidance, not ground truth.** The analyzer is a fast LLM triage layer and can misjudge (e.g. mislabel a strong cipher, or over-report). Treat its findings as a starting point to verify — the scanner's raw results are the authoritative facts. Grounding and disclaimers are being hardened (see issues).
 
 ---
 
@@ -123,6 +128,9 @@ Fortify/
 ├── fortify-backend/             # FastAPI backend & scanner logic
 │   ├── main.py                  # FastAPI entry point
 │   ├── db.py                    # SQLite data layer (scan persistence)
+│   ├── analyzer/                # AI risk analysis (separate from the scanner)
+│   │   ├── analyzer.py          # Prompt building + defensive JSON parsing
+│   │   └── llm.py               # LLM backend — talks to local Ollama (pluggable)
 │   └── scanner/
 │       ├── passive/             # Read-only checks (safe)
 │       │   ├── tls.py           # TLS version, cert, cipher
@@ -155,8 +163,9 @@ Fortify/
 ### Prerequisites
 
 - Python 3.10+
+- [Ollama](https://ollama.com) with a pulled model (`ollama pull llama3.1:8b`) — for the AI Analyzer (optional; only needed to run analysis)
 - Node.js (for the dashboard)
-- WSL2 (Windows users) or Linux/macOS
+- Windows, Linux, or macOS
 
 ### Installation
 

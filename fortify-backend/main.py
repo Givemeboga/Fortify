@@ -1,10 +1,12 @@
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from pydantic import BaseModel, HttpUrl
 
-from db import init_db, create_scan, update_scan_results, get_scan, get_all_scans
+from db import init_db, create_scan, update_scan_results, get_scan, get_all_scans, update_scan_analysis
 
 from scanner.passive.runner import run_passive_scan
 from scanner.active.runner import run_active_scan
+
+from analyzer.analyzer import analyze
 
 from enum import Enum
 
@@ -48,3 +50,19 @@ def read_scan(scan_id: int):
     if scan is None:
         raise HTTPException(status_code=404, detail="Scan not found")
     return scan
+
+@app.post("/scans/{scan_id}/analyze")
+def analyze_scan(scan_id: int):
+    scan = get_scan(scan_id)
+
+    if scan is None:
+        raise HTTPException(status_code=404, detail="Scan not found")
+
+    if scan["status"] != "completed":
+        raise HTTPException(status_code=400, detail="Scan not completed yet")
+
+    results = scan["results"]
+    analysis = analyze(results)
+    update_scan_analysis(scan_id, analysis)
+
+    return analysis

@@ -21,7 +21,8 @@ def init_db():
                    status TEXT NOT NULL,
                    results TEXT,
                    created_at TEXT,
-                   completed_at TEXT
+                   completed_at TEXT,
+                   analysis TEXT
                )
     ''')
 
@@ -79,6 +80,8 @@ def get_scan(id: int) -> dict | None:
     
     if scan["results"] is not None:
         scan["results"] = json.loads(scan["results"])
+    if scan["analysis"] is not None:
+         scan["analysis"] = json.loads(scan["analysis"])
     
     return scan
 
@@ -95,6 +98,18 @@ def get_all_scans() -> list[dict]:
         scan = dict(row)
         if scan["results"] is not None:
             scan["results"] = json.loads(scan["results"])
+        if scan["analysis"] is not None:
+            scan["analysis"] = json.loads(scan["analysis"])
         scans.append(scan)
 
     return scans
+
+def update_scan_analysis(id: int, analysis: dict) -> None:
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE scans SET analysis = ? WHERE id = ?",
+        (json.dumps(analysis), id)   # serialize dict → JSON string, same as results
+    )
+    conn.commit()
+    conn.close()
