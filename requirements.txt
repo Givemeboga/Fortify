@@ -7,3 +7,4 @@ python-nmap
 requests
 typer
 pydantic
+python-dotenv

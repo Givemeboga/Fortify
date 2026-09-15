@@ -185,6 +185,24 @@ source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+### Configuration (AI Analyzer)
+
+The AI Analyzer's LLM backend is selected via environment variables. Copy the template and edit it:
+
+```bash
+cp fortify-backend/.env.example fortify-backend/.env
+```
+
+| Variable | Values | Meaning |
+|---|---|---|
+| `LLM_PROVIDER` | `ollama` (default) / `gemini` | Which LLM backend to use |
+| `GEMINI_API_KEY` | your key | Required **only** when `LLM_PROVIDER=gemini` (get a free key at [Google AI Studio](https://aistudio.google.com)) |
+
+- **`ollama`** — runs a local model; **scan data never leaves your machine** (private by default).
+- **`gemini`** — sends scan results to Google's API; sharper output, but **your data leaves the machine** and, on the free tier, may be used to improve their models. Opt-in, bring-your-own-key.
+
+`.env` is gitignored — **never commit your API key.** The backend also accepts a key per request (for a future frontend "bring your own key" flow), falling back to `.env` otherwise.
+
 ---
 
 ## Usage
