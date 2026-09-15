@@ -28,7 +28,7 @@
 | Component | Description | Status |
 |---|---|---|
 | **Scanner** | Python module that tests web apps for common security issues (headers, TLS, misconfigurations, injections) | 🟢 Complete — passive + active |
-| **AI Analyzer** | LLM engine that reads scanner output, calculates risk levels, and gives actionable remediation — runs on a **local model (Ollama)** by default so scan data never leaves your machine; backend is pluggable | 🟢 Working (hardening in progress) |
+| **AI Analyzer** | LLM engine that reads scanner output, calculates risk levels, and gives actionable remediation — runs on a **local model (Ollama)** by default so scan data never leaves your machine; backend is pluggable | 🟢 Complete |
 | **Dashboard** | Frontend interface to visualize scan results, vulnerabilities, and risk assessments | 🟡 Next |
 
 ---
@@ -81,7 +81,7 @@ Fortify is built in phases. This table reflects the **actual** current state.
 | | Active checks (SQLi, XSS, path traversal) | ✅ Done |
 | **2 — Backend + DB** | SQLite result storage (data layer) | ✅ Done |
 | | FastAPI endpoints (trigger & retrieve scans) | ✅ Done |
-| **3 — AI Analyzer** | LLM risk scoring & remediation — local by default (Ollama), pluggable backend | ✅ Core done · 🚧 hardening |
+| **3 — AI Analyzer** | LLM risk scoring & remediation — local by default (Ollama), pluggable backend | ✅ Done |
 | **4 — Dashboard** | React + Tailwind visualization | ⬜ Next |
 | **5 — Polish** | PDF export, Docker, demo | ⬜ Planned |
 
@@ -116,7 +116,9 @@ Invalid URLs and unknown `scan_type` values are rejected with `422` at the API b
 
 The **AI Analyzer** turns raw scan facts into an interpreted risk report. It sends the results to a **local LLM via [Ollama](https://ollama.com)** (default model `llama3.1:8b`) and returns a structured assessment: an overall risk score/level, a plain-language summary, per-finding severity + remediation, and a prioritized fix order. Because the model runs locally, **scan data never leaves your machine** — fitting for a tool that maps a target's weaknesses. The LLM backend is provider-agnostic (a cloud option is planned — see issues).
 
-> ⚠️ **AI output is guidance, not ground truth.** The analyzer is a fast LLM triage layer and can misjudge (e.g. mislabel a strong cipher, or over-report). Treat its findings as a starting point to verify — the scanner's raw results are the authoritative facts. Grounding and disclaimers are being hardened (see issues).
+To keep the output trustworthy, the analyzer is **grounded**: findings are extracted from the scan results **deterministically in code** first, and the LLM is asked only to *explain and score those confirmed findings* — never to discover or invent new ones. Risk **levels are computed from scores in code** (so they can't disagree), benign-by-design paths (e.g. `robots.txt`) are excluded, and every report carries a verify-before-acting disclaimer.
+
+> ⚠️ **AI output is guidance, not ground truth.** Severity scoring is the LLM's judgment and can vary; treat it as a triage starting point — the scanner's raw results are the authoritative facts.
 
 ---
 
@@ -129,8 +131,9 @@ Fortify/
 │   ├── main.py                  # FastAPI entry point
 │   ├── db.py                    # SQLite data layer (scan persistence)
 │   ├── analyzer/                # AI risk analysis (separate from the scanner)
-│   │   ├── analyzer.py          # Prompt building + defensive JSON parsing
-│   │   └── llm.py               # LLM backend — talks to local Ollama (pluggable)
+│   │   ├── analyzer.py          # Grounding, prompt building, deterministic levels, parsing
+│   │   ├── llm.py               # LLM backend — talks to local Ollama (pluggable)
+│   │   └── benign_paths.txt     # Paths that are public by design (not flagged)
 │   └── scanner/
 │       ├── passive/             # Read-only checks (safe)
 │       │   ├── tls.py           # TLS version, cert, cipher
