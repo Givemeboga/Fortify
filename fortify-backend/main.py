@@ -59,7 +59,7 @@ def analyze_scan(scan_id: int):
         raise HTTPException(status_code=404, detail="Scan not found")
 
     if scan["status"] != "completed":
-        raise HTTPException(status_code=400, detail="Scan not completed yet")
+        raise HTTPException(status_code=409, detail="Scan not completed yet")
 
     results = scan["results"]
     analysis = analyze(results)
