@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+/* Fortify design tokens — each --color-* / --font-* becomes a Tailwind utility
+   (bg-bg, text-accent, font-display, etc.). Change a token here → whole app updates. */
+@theme {
+  --color-bg: #0A0E16;          /* near-black navy background */
+  --color-surface: #0F1420;     /* card / panel surfaces */
+  --color-surface-2: #131A28;   /* slightly raised surface (hover, header) */
+  --color-border: rgba(130, 160, 210, 0.14);
+  --color-accent: #2FA4FF;      /* electric azure */
+  --color-accent-dim: rgba(47, 164, 255, 0.12);
+  --color-text: #EAF1F8;        /* near-white primary text */
+  --color-muted: #8A97A8;       /* secondary blue-grey */
+  --color-faint: #55606F;       /* tertiary / disabled */
+
+  --color-crit: #FF4D4D;        /* critical */
+  --color-high: #F97316;        /* high */
+  --color-med:  #F5C518;        /* medium */
+  --color-low:  #3DD68C;        /* low / ok / success */
+
+  --font-display: "Grenze Gotisch", serif;    /* blackletter headings (chrome) */
+  --font-mono: "JetBrains Mono", monospace;   /* labels / technical readouts */
+  --font-sans: "Sora", system-ui, sans-serif; /* body / dense UI text */
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}

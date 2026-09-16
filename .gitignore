@@ -18,4 +18,7 @@ dist/
 *.db
 
 #Virtual environment
-venv/
+venv/dev_target.py
+
+# Local dev vulnerable test target (not shipped)
+dev_target.py

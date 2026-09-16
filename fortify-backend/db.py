@@ -113,3 +113,10 @@ def update_scan_analysis(id: int, analysis: dict) -> None:
     )
     conn.commit()
     conn.close()
+
+def delete_scan(id: int) -> None:
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM scans WHERE id = ?", (id,))
+    conn.commit()
+    conn.close()

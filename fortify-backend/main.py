@@ -1,7 +1,7 @@
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from pydantic import BaseModel, HttpUrl
 
-from db import init_db, create_scan, update_scan_results, get_scan, get_all_scans, update_scan_analysis
+from db import init_db, create_scan, update_scan_results, get_scan, get_all_scans, update_scan_analysis, delete_scan
 
 from scanner.passive.runner import run_passive_scan
 from scanner.active.runner import run_active_scan
@@ -16,6 +16,14 @@ class ScanType(str, Enum):
 
 app = FastAPI()
 init_db()
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],   # your dev frontend origin
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class ScanRequest(BaseModel):
     url: HttpUrl
@@ -66,3 +74,11 @@ def analyze_scan(scan_id: int):
     update_scan_analysis(scan_id, analysis)
 
     return analysis
+
+@app.delete("/scans/{scan_id}")
+def remove_scan(scan_id: int):
+    scan = get_scan(scan_id)
+    if scan is None:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    delete_scan(scan_id)
+    return {"deleted": scan_id}
