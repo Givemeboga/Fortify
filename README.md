@@ -29,7 +29,7 @@
 |---|---|---|
 | **Scanner** | Python module that tests web apps for common security issues (headers, TLS, misconfigurations, injections) | 🟢 Complete — passive + active |
 | **AI Analyzer** | LLM engine that reads scanner output, calculates risk levels, and gives actionable remediation — runs on a **local model (Ollama)** by default so scan data never leaves your machine; backend is pluggable | 🟢 Complete |
-| **Dashboard** | Frontend interface to visualize scan results, vulnerabilities, and risk assessments | 🟡 Next |
+| **Dashboard** | React + Tailwind console (fortress-themed) to launch scans, watch the live Siege Log, and read AI risk reports | 🚧 In progress — Command screen done |
 
 ---
 
@@ -82,7 +82,8 @@ Fortify is built in phases. This table reflects the **actual** current state.
 | **2 — Backend + DB** | SQLite result storage (data layer) | ✅ Done |
 | | FastAPI endpoints (trigger & retrieve scans) | ✅ Done |
 | **3 — AI Analyzer** | LLM risk scoring & remediation — local by default (Ollama), pluggable backend | ✅ Done |
-| **4 — Dashboard** | React + Tailwind visualization | ⬜ Next |
+| **4 — Dashboard** | Command screen — scan form, passive/active + consent gate, live Siege Log | ✅ Done |
+| | Battle Report (scan detail + findings + AI analysis) & Settings | 🚧 In progress |
 | **5 — Polish** | PDF export, Docker, demo | ⬜ Planned |
 
 ### What works today
@@ -120,6 +121,8 @@ To keep the output trustworthy, the analyzer is **grounded**: findings are extra
 
 > ⚠️ **AI output is guidance, not ground truth.** Severity scoring is the LLM's judgment and can vary; treat it as a triage starting point — the scanner's raw results are the authoritative facts.
 
+The **dashboard** (React + Tailwind, fortress-themed "operator console") is under way. Its **Command** screen is functional: a scan form with a passive/active toggle and an explicit consent gate for active scans, plus a live **Siege Log** that polls the API, colour-codes status, and supports deleting and paging through scans. Runs against the backend with CORS enabled for the dev origin.
+
 ---
 
 ## Project Structure
@@ -154,6 +157,13 @@ Fortify/
 │           ├── xss_payloads.txt     # XSS payloads
 │           ├── traversal_payloads.txt   # Path-traversal payloads
 │           └── traversal_signatures.txt # System-file content signatures
+├── fortify-dashboard/           # React + Tailwind frontend (Vite)
+│   └── src/
+│       ├── App.jsx              # Layout + shared scan state (fetch, poll, delete)
+│       └── components/
+│           ├── Sidebar.jsx      # Fortress chrome — wordmark, nav, ollama footer
+│           ├── ScanForm.jsx     # "Walk the perimeter" — scan form + consent gate
+│           └── SiegeLog.jsx     # Live scans table — status, delete, pagination
 ├── requirements.txt             # Python dependencies
 ├── LICENSE
 └── README.md
