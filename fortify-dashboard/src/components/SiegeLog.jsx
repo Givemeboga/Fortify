@@ -14,7 +14,7 @@ function formatTime(iso) {
   return new Date(iso).toLocaleString()
 }
 
-function SiegeLog({ scans, onDelete }) {
+function SiegeLog({ scans, onDelete, onSelect }) {
   const [page, setPage] = useState(0)          // local UI state
   const pageSize = 10
   const totalPages = Math.max(1, Math.ceil(scans.length / pageSize))
@@ -47,14 +47,18 @@ function SiegeLog({ scans, onDelete }) {
           </thead>
           <tbody>
             {pageScans.map((scan) => (
-              <tr key={scan.id} className="border-b border-border/50 hover:bg-surface-2">
+              <tr
+                key={scan.id}
+                onClick={() => onSelect(scan.id)}
+                className="border-b border-border/50 hover:bg-surface-2 cursor-pointer"
+              >
                 <td className="py-2 pr-6 font-mono text-text whitespace-nowrap">{scan.target_url}</td>
                 <td className="py-2 pr-6 font-mono text-muted">{scan.scan_type}</td>
                 <td className={`py-2 pr-6 font-mono ${statusColor(scan.status)}`}>{scan.status}</td>
                 <td className="py-2 pr-6 font-mono text-muted whitespace-nowrap">{formatTime(scan.created_at)}</td>
                 <td className="py-2">
                   <button
-                    onClick={() => onDelete(scan.id)}
+                    onClick={(e) => { e.stopPropagation(); onDelete(scan.id) }}
                     className="text-faint hover:text-crit font-mono"
                     title="Delete scan"
                   >
