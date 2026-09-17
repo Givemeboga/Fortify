@@ -95,12 +95,12 @@ def extract_findings(results: dict) -> list[dict]:
     for name, value in headers.get("leaky_headers", {}).items():
         findings.append({"type": "leaky_header", "issue": f"Leaky header: {name} = {value}"})
 
-    # --- Sensitive paths (only accessible ones) ---
+    # --- Sensitive paths (only genuinely exposed ones — see issue #15) ---
     status = results.get("status", {})
     for path, info in status.items():
         if path in BENIGN_PATHS:      # ← skip paths that are public by design
             continue
-        if info.get("status_code") == 200:
+        if info.get("exposed"):       # baseline-filtered exposure, not a bare 200
             findings.append({"type": "exposed_path", "issue": f"Accessible sensitive path: {path}"})
 
     # --- Active checks ---

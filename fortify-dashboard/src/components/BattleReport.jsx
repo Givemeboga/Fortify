@@ -151,7 +151,7 @@ async function handleAnalyze() {
                 {Object.entries(results.status).map(([path, info]) => (
                   <div key={path} className="flex justify-between gap-4">
                     <span className="text-muted break-all">{path}</span>
-                    <span className={info.status_code === 200 ? "text-high" : "text-faint"}>{info.status_code}</span>
+                    <span className={info.exposed ? "text-high" : "text-faint"}>{info.status_code}</span>
                   </div>
                 ))}
               </div>
