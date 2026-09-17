@@ -24,9 +24,12 @@ function Sidebar({ view, onNavigate }) {
   return (
     <aside className="w-60 shrink-0 border-r border-border flex flex-col">
       {/* wordmark */}
-      <div className="p-4 border-b border-border">
-        <div className="font-display text-2xl text-text">Fortify</div>
-        <div className="font-mono text-[10px] text-accent tracking-widest">THE KEEP · v0.4.2</div>
+      <div className="p-4 border-b border-border flex items-center gap-3">
+        <img src="/logo.png" alt="Fortify" className="w-10 h-10 rounded-full shrink-0" />
+        <div>
+          <div className="font-display text-2xl text-text leading-none">Fortify</div>
+          <div className="font-mono text-[10px] text-accent tracking-widest">THE KEEP · v0.4.2</div>
+        </div>
       </div>
 
       {/* nav */}
