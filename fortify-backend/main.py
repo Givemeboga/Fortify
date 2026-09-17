@@ -51,29 +51,30 @@ def start_scan(request: ScanRequest, background_tasks: BackgroundTasks):
 def list_scans():
     return get_all_scans()
 
-@app.get("/scans/{scan_id}")
-def read_scan(scan_id: int):
-    scan = get_scan(scan_id)
-
-    if scan is None:
-        raise HTTPException(status_code=404, detail="Scan not found")
-    return scan
+class AnalyzeRequest(BaseModel):
+    provider: str | None = None
+    api_key: str | None = None
 
 @app.post("/scans/{scan_id}/analyze")
-def analyze_scan(scan_id: int):
+def analyze_scan(scan_id: int, body: AnalyzeRequest | None = None):
     scan = get_scan(scan_id)
-
     if scan is None:
         raise HTTPException(status_code=404, detail="Scan not found")
-
     if scan["status"] != "completed":
         raise HTTPException(status_code=409, detail="Scan not completed yet")
 
-    results = scan["results"]
-    analysis = analyze(results)
+    provider = body.provider if body else None
+    api_key = body.api_key if body else None
+    analysis = analyze(scan["results"], provider=provider, api_key=api_key)
     update_scan_analysis(scan_id, analysis)
-
     return analysis
+
+@app.get("/scans/{scan_id}")
+def read_scan(scan_id: int):
+    scan = get_scan(scan_id)
+    if scan is None:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    return scan
 
 @app.delete("/scans/{scan_id}")
 def remove_scan(scan_id: int):

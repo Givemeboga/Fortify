@@ -46,24 +46,32 @@ function BattleReport({ scanId, onBack }) {
 
   useEffect(() => { loadScan() }, [scanId])
 
-  async function handleAnalyze() {
-    setAnalyzing(true)
-    try {
-      const res = await fetch(`http://localhost:8500/scans/${scanId}/analyze`, { method: "POST" })
-      if (!res.ok) {
-        console.error("Analyze failed:", res.status, await res.text())
-        alert(`Analysis failed (${res.status}) — check the backend/Ollama`)
-        return
-      }
-      const analysis = await res.json()
-      setScan((prev) => ({ ...prev, analysis }))
-    } catch (e) {
-      console.error("Analyze error:", e)
-      alert("Could not reach the analyzer — is the backend running?")
-    } finally {
-      setAnalyzing(false)
+async function handleAnalyze() {
+  setAnalyzing(true)
+  try {
+    // read the choice saved on the Settings page
+    const provider = localStorage.getItem("fortify_provider") || "ollama"
+    const apiKey = localStorage.getItem("fortify_gemini_key") || ""
+
+    const res = await fetch(`http://localhost:8500/scans/${scanId}/analyze`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider, api_key: apiKey }),   // ← send the settings
+    })
+    if (!res.ok) {
+      console.error("Analyze failed:", res.status, await res.text())
+      alert(`Analysis failed (${res.status}) — check the backend/provider`)
+      return
     }
+    const analysis = await res.json()
+    setScan((prev) => ({ ...prev, analysis }))
+  } catch (e) {
+    console.error("Analyze error:", e)
+    alert("Could not reach the analyzer — is the backend running?")
+  } finally {
+    setAnalyzing(false)
   }
+}
 
   if (!scan) return <div className="font-mono text-muted">Loading…</div>
 

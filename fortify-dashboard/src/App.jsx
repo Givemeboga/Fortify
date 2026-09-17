@@ -7,8 +7,9 @@ import BattleReport from './components/BattleReport'
 
 function App() {
   const [scans, setScans] = useState([])   // the list of scans, shared state
-  const [selectedScanId, setSelectedScanId] = useState(null) 
+  const [selectedScanId, setSelectedScanId] = useState(null)
   const [view, setView] = useState("command")  // "command", "settings", or "battle-report"
+  const [provider, setProvider] = useState(localStorage.getItem("fortify_provider") || "ollama")  // active AI provider (shared)
   // fetch all scans from the backend
   async function loadScans() {
     const res = await fetch("http://localhost:8500/scans")
@@ -30,10 +31,10 @@ useEffect(() => {
 
   return (
     <div className="flex min-h-screen bg-bg text-text">
-      <Sidebar view={view} onNavigate={setView} />
+      <Sidebar view={view} onNavigate={setView} provider={provider} />
       <main className="flex-1 p-8">
         {view === "settings" ? (
-          <Settings />
+          <Settings onProviderSaved={setProvider} />
         ) : selectedScanId !== null ? (
           <BattleReport scanId={selectedScanId} onBack={() => setSelectedScanId(null)} />
         ) : (

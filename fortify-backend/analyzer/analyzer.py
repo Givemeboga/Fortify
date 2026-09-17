@@ -42,7 +42,7 @@ Respond with ONLY a json object in exactly this structure:
 
 DISCLAIMER = "AI-generated guidance — verify findings before acting; the scan results are the authoritative facts."
 
-def analyze(results: dict) -> dict:
+def analyze(results: dict, provider: str | None = None, api_key: str | None = None) -> dict:
     findings = extract_findings(results)
 
     # No confirmed findings → don't even call the LLM (nothing to invent)
@@ -55,7 +55,7 @@ def analyze(results: dict) -> dict:
             "disclaimer": DISCLAIMER,
         }
 
-    raw = get_llm_response(build_prompt(findings))
+    raw = get_llm_response(build_prompt(findings), provider=provider, api_key=api_key)
     try:
         assessment = json.loads(raw)
     except json.JSONDecodeError:

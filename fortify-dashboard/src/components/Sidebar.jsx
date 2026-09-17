@@ -5,7 +5,7 @@ const COUNSEL = [
   { label: "Settings", view: "settings", badge: null },
 ]
 
-function Sidebar({ view, onNavigate }) {
+function Sidebar({ view, onNavigate, provider }) {
   const renderItem = (item) => (
     <div
       key={item.label}
@@ -44,10 +44,19 @@ function Sidebar({ view, onNavigate }) {
         </div>
       </nav>
 
-      {/* ollama footer */}
+      {/* provider footer — reflects the active AI provider */}
       <div className="p-3 border-t border-border font-mono text-[10px] text-faint leading-relaxed">
-        <div><span className="text-low">●</span> ollama · llama3.1:8b</div>
-        <div>127.0.0.1:11434 · nothing leaves</div>
+        {provider === "gemini" ? (
+          <>
+            <div><span className="text-med">●</span> gemini · cloud</div>
+            <div>google api · data leaves</div>
+          </>
+        ) : (
+          <>
+            <div><span className="text-low">●</span> ollama · llama3.1:8b</div>
+            <div>127.0.0.1:11434 · nothing leaves</div>
+          </>
+        )}
       </div>
     </aside>
   )
