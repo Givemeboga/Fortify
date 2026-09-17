@@ -29,7 +29,7 @@
 |---|---|---|
 | **Scanner** | Python module that tests web apps for common security issues (headers, TLS, misconfigurations, injections) | 🟢 Complete — passive + active |
 | **AI Analyzer** | LLM engine that reads scanner output, calculates risk levels, and gives actionable remediation — runs on a **local model (Ollama)** by default so scan data never leaves your machine; backend is pluggable | 🟢 Complete |
-| **Dashboard** | React + Tailwind console (fortress-themed) to launch scans, watch the live Siege Log, and read AI risk reports | 🚧 In progress — Command screen done |
+| **Dashboard** | React + Tailwind console (fortress-themed) to launch scans, watch the live Siege Log, read AI risk reports, and choose the AI provider | 🟢 Complete |
 
 ---
 
@@ -82,9 +82,8 @@ Fortify is built in phases. This table reflects the **actual** current state.
 | **2 — Backend + DB** | SQLite result storage (data layer) | ✅ Done |
 | | FastAPI endpoints (trigger & retrieve scans) | ✅ Done |
 | **3 — AI Analyzer** | LLM risk scoring & remediation — local by default (Ollama), pluggable backend | ✅ Done |
-| **4 — Dashboard** | Command screen — scan form, passive/active + consent gate, live Siege Log | ✅ Done |
-| | Battle Report (scan detail + findings + AI analysis) & Settings | 🚧 In progress |
-| **5 — Polish** | PDF export, Docker, demo | ⬜ Planned |
+| **4 — Dashboard** | Command (scan form + consent gate + live Siege Log), Battle Report (findings + AI analysis), Settings (BYOK provider/key) | ✅ Done |
+| **5 — Polish** | PDF export, Docker, demo | ⬜ Next |
 
 ### What works today
 
@@ -121,7 +120,13 @@ To keep the output trustworthy, the analyzer is **grounded**: findings are extra
 
 > ⚠️ **AI output is guidance, not ground truth.** Severity scoring is the LLM's judgment and can vary; treat it as a triage starting point — the scanner's raw results are the authoritative facts.
 
-The **dashboard** (React + Tailwind, fortress-themed "operator console") is under way. Its **Command** screen is functional: a scan form with a passive/active toggle and an explicit consent gate for active scans, plus a live **Siege Log** that polls the API, colour-codes status, and supports deleting and paging through scans. Runs against the backend with CORS enabled for the dev origin.
+The **dashboard** (React + Tailwind, fortress-themed "operator console") is complete:
+
+- **Command** — a scan form with a passive/active toggle and an explicit **consent gate** for active scans, plus a live **Siege Log** that polls the API, colour-codes status, and supports deleting and paging through scans.
+- **Battle Report** — click a scan to see its raw findings (TLS, headers, sensitive paths, active vulns) beside an **AI analysis** panel (risk badge, typewriter summary, per-finding severity + remediation, priority order) with a loading state while the model thinks.
+- **Settings** — choose the AI provider (**Local · Ollama** vs **Cloud · Gemini**) and supply your own key (BYOK); the choice is sent per-request and the sidebar footer shows the active provider and its privacy posture ("nothing leaves" vs "data leaves").
+
+It runs against the backend with CORS enabled for the dev origin.
 
 ---
 
@@ -161,9 +166,11 @@ Fortify/
 │   └── src/
 │       ├── App.jsx              # Layout + shared scan state (fetch, poll, delete)
 │       └── components/
-│           ├── Sidebar.jsx      # Fortress chrome — wordmark, nav, ollama footer
+│           ├── Sidebar.jsx      # Fortress chrome — wordmark, nav, provider footer
 │           ├── ScanForm.jsx     # "Walk the perimeter" — scan form + consent gate
-│           └── SiegeLog.jsx     # Live scans table — status, delete, pagination
+│           ├── SiegeLog.jsx     # Live scans table — status, delete, pagination
+│           ├── BattleReport.jsx # Scan detail — findings + animated AI analysis
+│           └── Settings.jsx     # AI provider choice + BYOK key (localStorage)
 ├── requirements.txt             # Python dependencies
 ├── LICENSE
 └── README.md
