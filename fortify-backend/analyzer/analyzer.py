@@ -1,17 +1,6 @@
 import json
 from analyzer.llm import get_llm_response
 
-from pathlib import Path
-
-BENIGN_PATHS_FILE = Path(__file__).parent / "benign_paths.txt"
-BENIGN_PATHS = set()
-with open(BENIGN_PATHS_FILE) as f:
-    for line in f:
-        cleaned = line.strip()
-        if not cleaned or cleaned.startswith("#"):
-            continue
-        BENIGN_PATHS.add(cleaned)
-
 def build_prompt(findings: list[dict]) -> str:
     return f"""You are a web application security analyst.
 
@@ -95,12 +84,12 @@ def extract_findings(results: dict) -> list[dict]:
     for name, value in headers.get("leaky_headers", {}).items():
         findings.append({"type": "leaky_header", "issue": f"Leaky header: {name} = {value}"})
 
-    # --- Sensitive paths (only genuinely exposed ones — see issue #15) ---
+    # --- Sensitive paths (only genuinely exposed ones — see issues #15/#16) ---
+    # Public-by-design paths (robots.txt, …) are marked exposed=False by the
+    # scanner itself now, so filtering here would be redundant.
     status = results.get("status", {})
     for path, info in status.items():
-        if path in BENIGN_PATHS:      # ← skip paths that are public by design
-            continue
-        if info.get("exposed"):       # baseline-filtered exposure, not a bare 200
+        if info.get("exposed"):
             findings.append({"type": "exposed_path", "issue": f"Accessible sensitive path: {path}"})
 
     # --- Active checks ---
