@@ -2,6 +2,7 @@ import sqlite3
 import json
 from pathlib import Path
 from datetime import datetime
+import secrets
 
 
 DB_PATH = Path(__file__).parent / "fortify.db"
@@ -15,7 +16,7 @@ def init_db():
 
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS scans (
-                   id INTEGER PRIMARY KEY AUTOINCREMENT,
+                   id TEXT PRIMARY KEY,
                    target_url TEXT NOT NULL,
                    scan_type TEXT NOT NULL,
                    status TEXT NOT NULL,
@@ -29,25 +30,24 @@ def init_db():
     conn.commit()
     conn.close()
 
-def create_scan(target_url: str, scan_type: str) -> int:
+def create_scan(target_url: str, scan_type: str) -> str:
     conn = get_connection()
     cursor = conn.cursor()
 
     now = datetime.utcnow().isoformat()
 
+    new_id = secrets.token_urlsafe(16)  # Generate a unique ID for the scan
     cursor.execute(
-        "INSERT INTO scans (target_url, scan_type, status, created_at) VALUES (?, ?, ?, ?)",
-        (target_url, scan_type, "pending", now)
+        "INSERT INTO scans (id, target_url, scan_type, status, created_at) VALUES (?, ?, ?, ?, ?)",
+        (new_id, target_url, scan_type, "pending", now)
     )
-
-    new_id = cursor.lastrowid
 
     conn.commit()
     conn.close() 
 
     return new_id
 
-def update_scan_results(id: int, results: dict, status: str)  -> None:
+def update_scan_results(id: str, results: dict, status: str)  -> None:
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -63,7 +63,7 @@ def update_scan_results(id: int, results: dict, status: str)  -> None:
     conn.commit()
     conn.close()
 
-def get_scan(id: int) -> dict | None:
+def get_scan(id: str) -> dict | None:
     conn = get_connection()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -104,7 +104,7 @@ def get_all_scans() -> list[dict]:
 
     return scans
 
-def update_scan_analysis(id: int, analysis: dict) -> None:
+def update_scan_analysis(id: str, analysis: dict) -> None:
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
@@ -114,7 +114,7 @@ def update_scan_analysis(id: int, analysis: dict) -> None:
     conn.commit()
     conn.close()
 
-def delete_scan(id: int) -> None:
+def delete_scan(id: str) -> None:
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM scans WHERE id = ?", (id,))

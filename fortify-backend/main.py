@@ -29,7 +29,7 @@ class ScanRequest(BaseModel):
     url: HttpUrl
     scan_type: ScanType = ScanType.passive   # default to the safe option
 
-def run_and_store(scan_id: int, url: str, scan_type: ScanType):
+def run_and_store(scan_id: str, url: str, scan_type: ScanType):
     try:
         if scan_type == ScanType.active:
             results = run_active_scan(url)
@@ -56,7 +56,7 @@ class AnalyzeRequest(BaseModel):
     api_key: str | None = None
 
 @app.post("/scans/{scan_id}/analyze")
-def analyze_scan(scan_id: int, body: AnalyzeRequest | None = None):
+def analyze_scan(scan_id: str, body: AnalyzeRequest | None = None):
     scan = get_scan(scan_id)
     if scan is None:
         raise HTTPException(status_code=404, detail="Scan not found")
@@ -70,14 +70,14 @@ def analyze_scan(scan_id: int, body: AnalyzeRequest | None = None):
     return analysis
 
 @app.get("/scans/{scan_id}")
-def read_scan(scan_id: int):
+def read_scan(scan_id: str):
     scan = get_scan(scan_id)
     if scan is None:
         raise HTTPException(status_code=404, detail="Scan not found")
     return scan
 
 @app.delete("/scans/{scan_id}")
-def remove_scan(scan_id: int):
+def remove_scan(scan_id: str):
     scan = get_scan(scan_id)
     if scan is None:
         raise HTTPException(status_code=404, detail="Scan not found")
