@@ -23,7 +23,8 @@ def init_db():
                    results TEXT,
                    created_at TEXT,
                    completed_at TEXT,
-                   analysis TEXT
+                   analysis TEXT,
+                   analysis_status TEXT
                )
     ''')
 
@@ -108,8 +109,8 @@ def update_scan_analysis(id: str, analysis: dict) -> None:
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "UPDATE scans SET analysis = ? WHERE id = ?",
-        (json.dumps(analysis), id)   # serialize dict → JSON string, same as results
+        "UPDATE scans SET analysis = ?, analysis_status = ? WHERE id = ?",
+        (json.dumps(analysis), "completed", id)   # serialize dict → JSON string, same as results
     )
     conn.commit()
     conn.close()
@@ -118,5 +119,15 @@ def delete_scan(id: str) -> None:
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM scans WHERE id = ?", (id,))
+    conn.commit()
+    conn.close()
+
+def set_analysis_status(id: str, status: str) -> None:
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE scans SET analysis_status = ? WHERE id = ?",
+        (status, id)
+    )
     conn.commit()
     conn.close()

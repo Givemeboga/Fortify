@@ -37,7 +37,6 @@ function Panel({ title, children }) {
 
 function BattleReport({ scanId, onBack }) {
   const [scan, setScan] = useState(null)
-  const [analyzing, setAnalyzing] = useState(false)
 
   async function loadScan() {
     const res = await fetch(`http://localhost:8500/scans/${scanId}`)
@@ -46,37 +45,35 @@ function BattleReport({ scanId, onBack }) {
 
   useEffect(() => { loadScan() }, [scanId])
 
-async function handleAnalyze() {
-  setAnalyzing(true)
-  try {
-    // read the choice saved on the Settings page
+  // Whenever the scan is analyzing, keep a poll running; clean it up when the
+  // status leaves "analyzing" or the component unmounts. This also resumes
+  // polling automatically when re-entering a scan that's mid-analysis.
+  useEffect(() => {
+    if (scan?.analysis_status !== "analyzing") return
+    const timer = setInterval(loadScan, 2000)
+    return () => clearInterval(timer)
+  }, [scan?.analysis_status])
+
+  async function handleAnalyze() {
     const provider = localStorage.getItem("fortify_provider") || "ollama"
     const apiKey = localStorage.getItem("fortify_gemini_key") || ""
 
     const res = await fetch(`http://localhost:8500/scans/${scanId}/analyze`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ provider, api_key: apiKey }),   // ← send the settings
+      body: JSON.stringify({ provider, api_key: apiKey }),
     })
-    if (!res.ok) {
-      console.error("Analyze failed:", res.status, await res.text())
-      alert(`Analysis failed (${res.status}) — check the backend/provider`)
-      return
-    }
-    const analysis = await res.json()
-    setScan((prev) => ({ ...prev, analysis }))
-  } catch (e) {
-    console.error("Analyze error:", e)
-    alert("Could not reach the analyzer — is the backend running?")
-  } finally {
-    setAnalyzing(false)
+    if (!res.ok) { alert(`Analysis failed to start (${res.status})`); return }
+
+    // flip to "analyzing" — the useEffect above sees this and starts polling
+    setScan((prev) => ({ ...prev, analysis_status: "analyzing" }))
   }
-}
 
   if (!scan) return <div className="font-mono text-muted">Loading…</div>
 
   const results = scan.results || {}
   const analysis = scan.analysis
+  const status = scan.analysis_status
 
   return (
     <div className="max-w-6xl">
@@ -93,15 +90,25 @@ async function handleAnalyze() {
 
         {/* LEFT — AI analysis */}
         <div className="col-span-2">
-          {analysis ? (
-            <AnalysisPanel analysis={analysis} />
-          ) : analyzing ? (
+          {status === "analyzing" ? (
             <div className="flex items-center gap-3 border border-border rounded p-4 bg-surface">
               <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
               <span className="font-mono text-sm text-muted animate-pulse">
                 Consulting the war council… the model is thinking.
               </span>
             </div>
+          ) : status === "failed" ? (
+            <div className="border border-crit/40 rounded p-4 bg-surface">
+              <div className="font-mono text-sm text-crit mb-2">Analysis failed — the model errored or was unreachable.</div>
+              <button
+                onClick={handleAnalyze}
+                className="bg-accent text-bg font-semibold px-4 py-1.5 rounded hover:brightness-110"
+              >
+                Retry
+              </button>
+            </div>
+          ) : analysis ? (
+            <AnalysisPanel analysis={analysis} />
           ) : (
             <button
               onClick={handleAnalyze}
