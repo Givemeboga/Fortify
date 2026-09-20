@@ -5,10 +5,30 @@ import ScanForm from './components/ScanForm'
 import SiegeLog from './components/SiegeLog'
 import BattleReport from './components/BattleReport'
 
+function useHashRoute() {
+  const [hash, setHash] = useState(window.location.hash || "#/")
+  useEffect(() => {
+    const onChange = () => setHash(window.location.hash || "#/")
+    window.addEventListener("hashchange", onChange)
+    return () => window.removeEventListener("hashchange", onChange)
+  }, [])
+  return hash
+}
+
 function App() {
   const [scans, setScans] = useState([])   // the list of scans, shared state
-  const [selectedScanId, setSelectedScanId] = useState(null)
-  const [view, setView] = useState("command")  // "command", "settings", or "battle-report"
+  const hash = useHashRoute()                  // current hash route
+  let view = "command"                          // default view
+  let selectedScanId = null                     // default: no scan selected
+  if (hash === "#/settings") {
+    view = "settings"
+  } else if (hash.startsWith("#/scans/")) {
+    view = "battle-report"
+    selectedScanId = hash.slice("#/scans/".length)  // extract the scan ID from the hash
+  }
+  function navigate(to) {
+    window.location.hash = to
+  }
   const [provider, setProvider] = useState(localStorage.getItem("fortify_provider") || "ollama")  // active AI provider (shared)
   // fetch all scans from the backend
   async function loadScans() {
@@ -31,18 +51,18 @@ useEffect(() => {
 
   return (
     <div className="flex min-h-screen bg-bg text-text">
-      <Sidebar view={view} onNavigate={setView} provider={provider} />
+      <Sidebar view={view} onNavigate={(v) => navigate(v === "settings" ? "#/settings" : "#/")} provider={provider} />
       <main className="flex-1 p-8">
         {view === "settings" ? (
           <Settings onProviderSaved={setProvider} />
         ) : selectedScanId !== null ? (
-          <BattleReport scanId={selectedScanId} onBack={() => setSelectedScanId(null)} />
+          <BattleReport scanId={selectedScanId} onBack={() => navigate("#/")} />
         ) : (
           <>
             <h1 className="font-display text-3xl">Command</h1>
             <span className="font-mono text-xs text-muted tracking-widest uppercase">// perimeter control</span>
             <ScanForm onScanStarted={loadScans} />
-            <SiegeLog scans={scans} onDelete={handleDelete} onSelect={setSelectedScanId} />
+            <SiegeLog scans={scans} onDelete={handleDelete} onSelect={(id) => navigate(`#/scans/${id}`)} />
           </>
         )}
       </main>
