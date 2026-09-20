@@ -3,9 +3,10 @@ import json
 from pathlib import Path
 from datetime import datetime
 import secrets
+import os
 
 
-DB_PATH = Path(__file__).parent / "fortify.db"
+DB_PATH = Path(os.getenv("FORTIFY_DB_PATH", str(Path(__file__).parent / "fortify.db")))
 
 def get_connection():
     return sqlite3.connect(str(DB_PATH))

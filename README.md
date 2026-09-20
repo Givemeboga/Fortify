@@ -220,6 +220,27 @@ cp fortify-backend/.env.example fortify-backend/.env
 
 `.env` is gitignored — **never commit your API key.** The backend also accepts a key per request (for a future frontend "bring your own key" flow), falling back to `.env` otherwise.
 
+### Run with Docker (recommended)
+
+The whole stack — backend, dashboard, and a persistent database — runs with one command. You only need [Docker Desktop](https://www.docker.com/products/docker-desktop/) (with its engine running).
+
+```bash
+docker compose up --build
+```
+
+Then open:
+
+| Service | URL |
+|---|---|
+| Dashboard | http://localhost:5173 |
+| Backend API | http://localhost:8500 |
+
+Notes:
+
+- **AI analysis with Ollama** — run Ollama on your **host** (`ollama pull llama3.1:8b`). The backend container reaches it automatically via `host.docker.internal` (wired in `docker-compose.yml`); no config needed.
+- **AI analysis with Gemini** — no `.env` required: set the provider and paste your key in the dashboard's **Settings** page (bring-your-own-key, stored in your browser).
+- **Data persistence** — scans are stored in a named volume (`fortify-data`), so they survive restarts. `docker compose down` keeps your data; `docker compose down -v` wipes it for a clean reset.
+
 ---
 
 ## Usage

@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 # load .env from the backend dir (fortify-backend/.env)
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "llama3.1:8b"
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
 GEMINI_MODEL = "gemini-3.6-flash"
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 

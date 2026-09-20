@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: fortify-backend/Dockerfile
+    ports:
+      - "8500:8500"
+    environment:
+      - OLLAMA_URL=http://host.docker.internal:11434/api/generate
+      - FORTIFY_DB_PATH=/app/data/fortify.db      # ← DB goes in the mounted dir
+    volumes:
+      - fortify-data:/app/data                    # ← named volume mounted at /app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  frontend:
+    build:
+      context: ./fortify-dashboard
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  fortify-data:                                   # ← declares the named volume

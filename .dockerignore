@@ -1,0 +1,18 @@
+# secrets — never bake into an image
+**/.env
+
+# local dev database (the container uses the volume)
+**/*.db
+
+# python caches / envs
+**/__pycache__/
+**/*.pyc
+venv/
+
+# node / git / build output
+**/node_modules/
+.git/
+fortify-dashboard/dist/
+
+# local-only test target
+dev_target.py
