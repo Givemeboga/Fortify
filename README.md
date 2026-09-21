@@ -67,7 +67,37 @@ A look at the Fortify landing page — the medieval-fortress metaphor carried th
 
 <p align="center"><i>Free and open source — clone the pipeline and hold the walls in minutes.</i></p>
 
-> **Note:** the landing page is a design mock; the scanner panel is illustrative. The real, wired-up dashboard arrives in Phase 4.
+> **Note:** the landing page above is a design mock. The **real, wired-up dashboard** is shown below.
+
+---
+
+## 📸 The Dashboard
+
+The operator console, running live against the scanner and AI Analyzer.
+
+**Command** — launch a scan and watch the live Siege Log.
+
+<p align="center">
+  <img src="assets/shot-command.png" alt="Command view — scan form and Siege Log" width="90%" />
+</p>
+
+**Battle Report** — raw findings (TLS, headers, sensitive paths) beside a grounded **AI risk analysis** (risk badge, per-finding severity, prioritized fixes).
+
+<p align="center">
+  <img src="assets/shot-report.png" alt="Battle Report — findings and AI analysis" width="90%" />
+</p>
+
+**Settings (BYOK)** — run analysis on a **local model (Ollama)** so nothing leaves your machine, or bring your own **Gemini** key for cloud analysis.
+
+<p align="center">
+  <img src="assets/shot-settings.png" alt="Settings — provider toggle and API key (BYOK)" width="90%" />
+</p>
+
+**Export PDF** — save any Battle Report as a clean, shareable document.
+
+<p align="center">
+  <img src="assets/shot-pdf.png" alt="Battle Report exported as a light-themed PDF" width="90%" />
+</p>
 
 ---
 
@@ -83,7 +113,7 @@ Fortify is built in phases. This table reflects the **actual** current state.
 | | FastAPI endpoints (trigger & retrieve scans) | ✅ Done |
 | **3 — AI Analyzer** | LLM risk scoring & remediation — local by default (Ollama), pluggable backend | ✅ Done |
 | **4 — Dashboard** | Command (scan form + consent gate + live Siege Log), Battle Report (findings + AI analysis), Settings (BYOK provider/key) | ✅ Done |
-| **5 — Polish** | PDF export, Docker, demo | ⬜ Next |
+| **5 — Polish** | Docker one-command run, PDF export, hardening (unguessable scan IDs, non-blocking analysis, URL routing), demo screenshots | ✅ Done |
 
 ### What works today
 
@@ -114,7 +144,7 @@ The **FastAPI backend** exposes all of this over HTTP. Scans run in the backgrou
 
 Invalid URLs and unknown `scan_type` values are rejected with `422` at the API boundary (Pydantic validation).
 
-The **AI Analyzer** turns raw scan facts into an interpreted risk report. It sends the results to a **local LLM via [Ollama](https://ollama.com)** (default model `llama3.1:8b`) and returns a structured assessment: an overall risk score/level, a plain-language summary, per-finding severity + remediation, and a prioritized fix order. Because the model runs locally, **scan data never leaves your machine** — fitting for a tool that maps a target's weaknesses. The LLM backend is provider-agnostic (a cloud option is planned — see issues).
+The **AI Analyzer** turns raw scan facts into an interpreted risk report. It sends the results to a **local LLM via [Ollama](https://ollama.com)** (default model `llama3.1:8b`) and returns a structured assessment: an overall risk score/level, a plain-language summary, per-finding severity + remediation, and a prioritized fix order. Because the model runs locally, **scan data never leaves your machine** — fitting for a tool that maps a target's weaknesses. The LLM backend is provider-agnostic: a **cloud option (Google Gemini)** is also available as opt-in, bring-your-own-key, selectable from the dashboard's Settings.
 
 To keep the output trustworthy, the analyzer is **grounded**: findings are extracted from the scan results **deterministically in code** first, and the LLM is asked only to *explain and score those confirmed findings* — never to discover or invent new ones. Risk **levels are computed from scores in code** (so they can't disagree), benign-by-design paths (e.g. `robots.txt`) are excluded, and every report carries a verify-before-acting disclaimer.
 
