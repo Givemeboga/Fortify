@@ -11,8 +11,9 @@
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.10+-blue?style=flat-square&logo=python" alt="Python 3.10+" />
   <img src="https://img.shields.io/badge/fastapi-backend-009688?style=flat-square&logo=fastapi" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/react-dashboard-61DAFB?style=flat-square&logo=react" alt="React" />
+  <img src="https://img.shields.io/badge/docker-ready-2496ED?style=flat-square&logo=docker" alt="Docker" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License" />
-  <img src="https://img.shields.io/badge/status-active-brightgreen?style=flat-square" alt="Status" />
 </p>
 
 <p align="center">
@@ -21,57 +22,36 @@
 
 ---
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Screenshots](#screenshots)
+- [Quick Start](#quick-start)
+- [Usage](#usage)
+- [How It Works](#how-it-works)
+- [Project Structure](#project-structure)
+- [Roadmap](#roadmap)
+- [Responsible Use](#responsible-use)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
 ## Overview
 
-**Fortify** is an open-source web application security tool that helps developers and security professionals identify vulnerabilities and improve web app defenses. It consists of three main components:
+**Fortify** is an open-source web application security tool that helps developers and security professionals find vulnerabilities and harden web apps. Three components work together:
 
 | Component | Description | Status |
 |---|---|---|
-| **Scanner** | Python module that tests web apps for common security issues (headers, TLS, misconfigurations, injections) | 🟢 Complete — passive + active |
-| **AI Analyzer** | LLM engine that reads scanner output, calculates risk levels, and gives actionable remediation — runs on a **local model (Ollama)** by default so scan data never leaves your machine; backend is pluggable | 🟢 Complete |
-| **Dashboard** | React + Tailwind console (fortress-themed) to launch scans, watch the live Siege Log, read AI risk reports, and choose the AI provider | 🟢 Complete |
+| **Scanner** | Python module testing for common issues (headers, TLS, misconfigurations, injections) | 🟢 Passive + active |
+| **AI Analyzer** | LLM that reads scanner output, scores risk, and gives remediation — **local by default (Ollama)** so data stays on your machine; pluggable | 🟢 Complete |
+| **Dashboard** | React + Tailwind console to launch scans, watch the live Siege Log, read AI reports, and pick the provider | 🟢 Complete |
+
+> ⚠️ **AI output is guidance, not ground truth.** Severity scoring is the LLM's judgment and can vary; the scanner's raw results are the authoritative facts. Treat the analysis as a triage starting point.
 
 ---
 
-## 🏰 Landing Page
-
-A look at the Fortify landing page — the medieval-fortress metaphor carried through the whole experience.
-
-<p align="center">
-  <img src="assets/landing-1.png" alt="Live scanner demo — point it at a gate and watch" width="90%" />
-</p>
-
-<p align="center"><i>See it defend — point Fortify at a URL and watch it probe the perimeter.</i></p>
-
-<p align="center">
-  <img src="assets/landing-3.png" alt="Three walls, one stronghold — Scanner, AI Analyzer, Dashboard" width="90%" />
-</p>
-
-<p align="center"><i>Three walls, one stronghold — the Scanner, AI Analyzer, and Dashboard.</i></p>
-
-<p align="center">
-  <img src="assets/landing-4.png" alt="A bestiary of threats — XSS, CSRF, Clickjacking, Weak TLS" width="90%" />
-</p>
-
-<p align="center"><i>A bestiary of threats — the classes of vulnerability Fortify is built to repel.</i></p>
-
-<p align="center">
-  <img src="assets/landing-5.png" alt="The siege log — point it at a URL, scan, receive the ranked fix list" width="90%" />
-</p>
-
-<p align="center"><i>The siege log — from a URL to a ranked, prioritized fix list.</i></p>
-
-<p align="center">
-  <img src="assets/landing-6.png" alt="Raise your own fort — free and open source" width="90%" />
-</p>
-
-<p align="center"><i>Free and open source — clone the pipeline and hold the walls in minutes.</i></p>
-
-> **Note:** the landing page above is a design mock. The **real, wired-up dashboard** is shown below.
-
----
-
-## 📸 The Dashboard
+## Screenshots
 
 The operator console, running live against the scanner and AI Analyzer.
 
@@ -99,160 +79,49 @@ The operator console, running live against the scanner and AI Analyzer.
   <img src="assets/shot-pdf.png" alt="Battle Report exported as a light-themed PDF" width="90%" />
 </p>
 
----
+<details>
+<summary><b>🏰 See the landing page (design mock)</b></summary>
 
-## Roadmap
+<br />
 
-Fortify is built in phases. This table reflects the **actual** current state.
+The medieval-fortress metaphor carried through the whole experience.
 
-| Phase | Scope | Status |
-|---|---|---|
-| **1 — Scanner core** | Passive checks (TLS, headers, sensitive paths) | ✅ Done |
-| | Active checks (SQLi, XSS, path traversal) | ✅ Done |
-| **2 — Backend + DB** | SQLite result storage (data layer) | ✅ Done |
-| | FastAPI endpoints (trigger & retrieve scans) | ✅ Done |
-| **3 — AI Analyzer** | LLM risk scoring & remediation — local by default (Ollama), pluggable backend | ✅ Done |
-| **4 — Dashboard** | Command (scan form + consent gate + live Siege Log), Battle Report (findings + AI analysis), Settings (BYOK provider/key) | ✅ Done |
-| **5 — Polish** | Docker one-command run, PDF export, hardening (unguessable scan IDs, non-blocking analysis, URL routing), demo screenshots | ✅ Done |
+<p align="center">
+  <img src="assets/landing-1.png" alt="Live scanner demo" width="90%" />
+</p>
+<p align="center"><i>See it defend — point Fortify at a URL and watch it probe the perimeter.</i></p>
 
-### What works today
+<p align="center">
+  <img src="assets/landing-3.png" alt="Three walls, one stronghold" width="90%" />
+</p>
+<p align="center"><i>Three walls, one stronghold — the Scanner, AI Analyzer, and Dashboard.</i></p>
 
-The **passive scanner** is functional. It runs read-only checks against a target and returns a single structured result:
+<p align="center">
+  <img src="assets/landing-4.png" alt="A bestiary of threats" width="90%" />
+</p>
+<p align="center"><i>A bestiary of threats — the classes of vulnerability Fortify is built to repel.</i></p>
 
-- **TLS** — protocol version, certificate expiry/validity, cipher suite
-- **Headers** — missing defensive headers, present headers, leaky (version-disclosing) headers, redirect chain
-- **Sensitive paths** — probes common exposed paths (`/.env`, `/.git/`, `/admin`, …) and records status codes
+<p align="center">
+  <img src="assets/landing-5.png" alt="The siege log" width="90%" />
+</p>
+<p align="center"><i>The siege log — from a URL to a ranked, prioritized fix list.</i></p>
 
-Scan results are persisted to a local **SQLite** database (`db.py`) with a full create → update → retrieve lifecycle, storing the nested result as JSON.
+<p align="center">
+  <img src="assets/landing-6.png" alt="Raise your own fort — free and open source" width="90%" />
+</p>
+<p align="center"><i>Free and open source — clone the pipeline and hold the walls in minutes.</i></p>
 
-The **active scanner** (injection-based, opt-in) is complete — it injects payloads into each URL query parameter and reports the vulnerable parameter, the triggering payload, the matched signal, and scan-health counters (`requests_made`, `errors`) so a failed scan is never mistaken for a clean one:
+> The landing page is a design mock; the wired-up dashboard is shown in the [Screenshots](#screenshots) above.
 
-- **SQL injection** — flags a parameter when an injected payload makes the response leak a database error signature.
-- **Cross-site scripting (XSS)** — flags a parameter when an injected script payload is reflected back **unescaped** (exact-match, so escaped reflections are correctly cleared).
-- **Path traversal** — flags a parameter when a `../`-style payload makes the response leak system-file contents (e.g. `/etc/passwd`).
-
-Active scanning is **opt-in and consent-gated**: it only runs when the request explicitly asks for it.
-
-The **FastAPI backend** exposes all of this over HTTP. Scans run in the background, so a request returns immediately with an ID and the client polls for the result:
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/scan` | Validate a target URL, start a background scan (`scan_type`: `passive` default, or `active`), return the scan ID with `status: pending` |
-| `GET` | `/scans` | List all scans (newest first) |
-| `GET` | `/scans/{id}` | Retrieve one scan by ID (`404` if not found) |
-| `POST` | `/scans/{id}/analyze` | Run the AI Analyzer on a completed scan and store the result (`404` if not found, `409` if the scan is not completed yet) |
-
-Invalid URLs and unknown `scan_type` values are rejected with `422` at the API boundary (Pydantic validation).
-
-The **AI Analyzer** turns raw scan facts into an interpreted risk report. It sends the results to a **local LLM via [Ollama](https://ollama.com)** (default model `llama3.1:8b`) and returns a structured assessment: an overall risk score/level, a plain-language summary, per-finding severity + remediation, and a prioritized fix order. Because the model runs locally, **scan data never leaves your machine** — fitting for a tool that maps a target's weaknesses. The LLM backend is provider-agnostic: a **cloud option (Google Gemini)** is also available as opt-in, bring-your-own-key, selectable from the dashboard's Settings.
-
-To keep the output trustworthy, the analyzer is **grounded**: findings are extracted from the scan results **deterministically in code** first, and the LLM is asked only to *explain and score those confirmed findings* — never to discover or invent new ones. Risk **levels are computed from scores in code** (so they can't disagree), benign-by-design paths (e.g. `robots.txt`) are excluded, and every report carries a verify-before-acting disclaimer.
-
-> ⚠️ **AI output is guidance, not ground truth.** Severity scoring is the LLM's judgment and can vary; treat it as a triage starting point — the scanner's raw results are the authoritative facts.
-
-The **dashboard** (React + Tailwind, fortress-themed "operator console") is complete:
-
-- **Command** — a scan form with a passive/active toggle and an explicit **consent gate** for active scans, plus a live **Siege Log** that polls the API, colour-codes status, and supports deleting and paging through scans.
-- **Battle Report** — click a scan to see its raw findings (TLS, headers, sensitive paths, active vulns) beside an **AI analysis** panel (risk badge, typewriter summary, per-finding severity + remediation, priority order) with a loading state while the model thinks.
-- **Settings** — choose the AI provider (**Local · Ollama** vs **Cloud · Gemini**) and supply your own key (BYOK); the choice is sent per-request and the sidebar footer shows the active provider and its privacy posture ("nothing leaves" vs "data leaves").
-
-It runs against the backend with CORS enabled for the dev origin.
+</details>
 
 ---
 
-## Project Structure
-
-```
-Fortify/
-├── assets/                      # Static assets (logo, images)
-├── fortify-backend/             # FastAPI backend & scanner logic
-│   ├── main.py                  # FastAPI entry point
-│   ├── db.py                    # SQLite data layer (scan persistence)
-│   ├── analyzer/                # AI risk analysis (separate from the scanner)
-│   │   ├── analyzer.py          # Grounding, prompt building, deterministic levels, parsing
-│   │   ├── llm.py               # LLM backend — talks to local Ollama (pluggable)
-│   │   └── benign_paths.txt     # Paths that are public by design (not flagged)
-│   └── scanner/
-│       ├── passive/             # Read-only checks (safe)
-│       │   ├── tls.py           # TLS version, cert, cipher
-│       │   ├── headers.py       # Security & leaky headers
-│       │   ├── status.py        # Sensitive-path probing
-│       │   └── runner.py        # Orchestrates a full passive scan
-│       ├── active/              # Injection checks (opt-in)
-│       │   ├── injector.py      # Injects a payload into each query param
-│       │   ├── sqli.py          # Error-based SQL injection detection
-│       │   ├── xss.py           # Reflected-XSS detection
-│       │   ├── path_traversal.py # Path-traversal detection
-│       │   └── runner.py        # Orchestrates a full active scan
-│       └── config/
-│           ├── headers.json         # Header lists (config)
-│           ├── paths.txt            # Sensitive-path wordlist
-│           ├── sqli_payloads.txt    # SQL injection payloads
-│           ├── sql_errors.txt       # DB error signatures
-│           ├── xss_payloads.txt     # XSS payloads
-│           ├── traversal_payloads.txt   # Path-traversal payloads
-│           └── traversal_signatures.txt # System-file content signatures
-├── fortify-dashboard/           # React + Tailwind frontend (Vite)
-│   └── src/
-│       ├── App.jsx              # Layout + shared scan state (fetch, poll, delete)
-│       └── components/
-│           ├── Sidebar.jsx      # Fortress chrome — wordmark, nav, provider footer
-│           ├── ScanForm.jsx     # "Walk the perimeter" — scan form + consent gate
-│           ├── SiegeLog.jsx     # Live scans table — status, delete, pagination
-│           ├── BattleReport.jsx # Scan detail — findings + animated AI analysis
-│           └── Settings.jsx     # AI provider choice + BYOK key (localStorage)
-├── requirements.txt             # Python dependencies
-├── LICENSE
-└── README.md
-```
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- Python 3.10+
-- [Ollama](https://ollama.com) with a pulled model (`ollama pull llama3.1:8b`) — for the AI Analyzer (optional; only needed to run analysis)
-- Node.js (for the dashboard)
-- Windows, Linux, or macOS
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/Givemeboga/Fortify.git
-cd Fortify
-
-# Create and activate a virtual environment
-python -m venv venv
-source venv/bin/activate          # Windows: venv\Scripts\activate
-
-# Install Python dependencies
-pip install -r requirements.txt
-```
-
-### Configuration (AI Analyzer)
-
-The AI Analyzer's LLM backend is selected via environment variables. Copy the template and edit it:
-
-```bash
-cp fortify-backend/.env.example fortify-backend/.env
-```
-
-| Variable | Values | Meaning |
-|---|---|---|
-| `LLM_PROVIDER` | `ollama` (default) / `gemini` | Which LLM backend to use |
-| `GEMINI_API_KEY` | your key | Required **only** when `LLM_PROVIDER=gemini` (get a free key at [Google AI Studio](https://aistudio.google.com)) |
-
-- **`ollama`** — runs a local model; **scan data never leaves your machine** (private by default).
-- **`gemini`** — sends scan results to Google's API; sharper output, but **your data leaves the machine** and, on the free tier, may be used to improve their models. Opt-in, bring-your-own-key.
-
-`.env` is gitignored — **never commit your API key.** The backend also accepts a key per request (for a future frontend "bring your own key" flow), falling back to `.env` otherwise.
+## Quick Start
 
 ### Run with Docker (recommended)
 
-The whole stack — backend, dashboard, and a persistent database — runs with one command. You only need [Docker Desktop](https://www.docker.com/products/docker-desktop/) (with its engine running).
+The whole stack — backend, dashboard, and a persistent database — runs with one command. You only need [Docker Desktop](https://www.docker.com/products/docker-desktop/) (engine running).
 
 ```bash
 docker compose up --build
@@ -262,20 +131,72 @@ Then open:
 
 | Service | URL |
 |---|---|
-| Dashboard | http://localhost:5173 |
+| **Dashboard** | http://localhost:5173 |
 | Backend API | http://localhost:8500 |
 
-Notes:
+- **AI analysis with Ollama** — run Ollama on your **host** (`ollama pull llama3.1:8b`). The backend container reaches it automatically via `host.docker.internal`; no config needed.
+- **AI analysis with Gemini** — no `.env` required: pick the provider and paste your key in the dashboard's **Settings** (BYOK, stored in your browser).
+- **Data persistence** — scans live in a named volume (`fortify-data`). `docker compose down` keeps them; `docker compose down -v` wipes for a clean reset.
 
-- **AI analysis with Ollama** — run Ollama on your **host** (`ollama pull llama3.1:8b`). The backend container reaches it automatically via `host.docker.internal` (wired in `docker-compose.yml`); no config needed.
-- **AI analysis with Gemini** — no `.env` required: set the provider and paste your key in the dashboard's **Settings** page (bring-your-own-key, stored in your browser).
-- **Data persistence** — scans are stored in a named volume (`fortify-data`), so they survive restarts. `docker compose down` keeps your data; `docker compose down -v` wipes it for a clean reset.
+<details>
+<summary><b>Run locally without Docker</b></summary>
+
+<br />
+
+**Prerequisites:** Python 3.10+, Node.js, and (optional, for AI analysis) [Ollama](https://ollama.com) with `ollama pull llama3.1:8b`.
+
+**1. Backend**
+
+```bash
+git clone https://github.com/Givemeboga/Fortify.git
+cd Fortify
+
+python -m venv venv
+source venv/bin/activate          # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+
+cd fortify-backend
+uvicorn main:app --port 8500
+```
+
+The API is at `http://localhost:8500`, with Swagger docs at `/docs`.
+
+**2. Dashboard** (in a second terminal)
+
+```bash
+cd fortify-dashboard
+npm install
+npm run dev                        # http://localhost:5173
+```
+
+**3. Configuration (AI Analyzer)** — the LLM backend is chosen via env vars or the dashboard Settings. For a server-side default, copy the template:
+
+```bash
+cp fortify-backend/.env.example fortify-backend/.env
+```
+
+| Variable | Values | Meaning |
+|---|---|---|
+| `LLM_PROVIDER` | `ollama` (default) / `gemini` | Which LLM backend to use |
+| `GEMINI_API_KEY` | your key | Required **only** for `gemini` (free key at [Google AI Studio](https://aistudio.google.com)) |
+
+- **`ollama`** — local model; scan data never leaves your machine.
+- **`gemini`** — sends results to Google's API; sharper output, but data leaves the machine. Opt-in, bring-your-own-key.
+
+`.env` is gitignored — **never commit your API key.** The dashboard also sends a key per request (BYOK), falling back to `.env`.
+
+</details>
 
 ---
 
 ## Usage
 
-### Run a passive scan (available now)
+Prefer the [Quick Start](#quick-start) to run the full app. For scripting or API use:
+
+<details>
+<summary><b>As a Python library</b></summary>
+
+<br />
 
 From inside `fortify-backend/`:
 
@@ -287,56 +208,155 @@ result = run_passive_scan("https://example.com")
 print(json.dumps(result, indent=2))
 ```
 
-Returns a single nested dictionary with `tls`, `headers`, and `status` sections — ready to be stored, served over an API, or analyzed.
+Returns a nested dict with `tls`, `headers`, and `status` sections — ready to store, serve, or analyze.
 
-### Backend API (available now)
+</details>
 
-Run the FastAPI backend from inside `fortify-backend/`:
+<details>
+<summary><b>Over the HTTP API</b></summary>
 
-```bash
-uvicorn main:app --reload --port 8500
-```
+<br />
 
-The API is available at `http://localhost:8500`, with interactive Swagger docs at `http://localhost:8500/docs`.
-
-Example — start a scan, then retrieve it:
+With the backend running (see Quick Start), scans run in the background — the request returns an ID immediately and you poll for the result:
 
 ```bash
 # start a scan (returns an id immediately)
 curl -X POST http://localhost:8500/scan \
   -H "Content-Type: application/json" \
   -d '{"url": "https://example.com"}'
+# → {"id": "a7Kp9wQ...", "status": "pending"}
 
-# retrieve the result by id
-curl http://localhost:8500/scans/1
+# retrieve the result by that id
+curl http://localhost:8500/scans/a7Kp9wQ...
 ```
 
-### Dashboard (planned)
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/scan` | Start a background scan (`scan_type`: `passive` default, or `active`); returns the scan ID |
+| `GET` | `/scans` | List all scans (newest first) |
+| `GET` | `/scans/{id}` | Retrieve one scan (`404` if not found) |
+| `POST` | `/scans/{id}/analyze` | Run the AI Analyzer on a completed scan (`404`/`409` as applicable) |
+| `DELETE` | `/scans/{id}` | Delete a scan |
 
-The React dashboard arrives in Phase 4.
+Scan IDs are unguessable strings (not sequential), and invalid URLs / unknown `scan_type` values are rejected with `422` at the API boundary.
+
+</details>
 
 ---
 
-## ⚠️ Legal & Ethical Use
+## How It Works
 
-Fortify is intended for **authorized security testing only**. Only scan systems you **own** or have **explicit written permission** to test. Unauthorized scanning of systems you do not control may be illegal under computer-misuse laws (e.g. the CFAA in the US and equivalents elsewhere). You are solely responsible for how you use this tool.
+<details>
+<summary><b>Scanner, backend, AI Analyzer, and dashboard — the full breakdown</b></summary>
+
+<br />
+
+### Passive scanner (read-only, safe)
+
+- **TLS** — protocol version, certificate expiry/validity, cipher suite
+- **Headers** — missing defensive headers, present headers, leaky (version-disclosing) headers, redirect chain
+- **Sensitive paths** — probes common exposed paths (`/.env`, `/.git/`, `/admin`, …). Exposure is judged by **content signals** (content-type + body fingerprints), not a bare `200`, so sites that return real pages for those paths don't false-positive; public-by-design paths (`robots.txt`) are excluded.
+
+### Active scanner (injection-based, opt-in & consent-gated)
+
+Injects payloads into each URL query parameter and reports the vulnerable parameter, the triggering payload, the matched signal, and scan-health counters (`requests_made`, `errors`) so a failed scan is never mistaken for a clean one:
+
+- **SQL injection** — flags a parameter when a payload makes the response leak a database error signature.
+- **Cross-site scripting (XSS)** — flags a parameter when a script payload is reflected **unescaped** (exact-match, so escaped reflections are cleared).
+- **Path traversal** — flags a parameter when a `../` payload leaks system-file contents (e.g. `/etc/passwd`).
+
+### FastAPI backend
+
+Scans run as background tasks; results persist to **SQLite** with a full create → update → retrieve lifecycle (nested result stored as JSON). Scan IDs are **unguessable strings** to prevent enumeration/IDOR. AI analysis also runs in the background, with its status persisted so the dashboard can poll and survive refreshes.
+
+### AI Analyzer (grounded)
+
+Turns raw scan facts into an interpreted risk report: overall risk score/level, plain-language summary, per-finding severity + remediation, and a prioritized fix order. It runs on a **local LLM via [Ollama](https://ollama.com)** by default (data never leaves your machine); a **cloud option (Google Gemini)** is available opt-in, BYOK, from Settings.
+
+To stay trustworthy, the analyzer is **grounded**: findings are extracted from the scan results **deterministically in code** first, and the LLM is asked only to *explain and score confirmed findings* — never to invent new ones. Risk **levels are computed from scores in code** (so they can't disagree), and every report carries a verify-before-acting disclaimer.
+
+### Dashboard (React + Tailwind)
+
+- **Command** — scan form with a passive/active toggle and an explicit **consent gate** for active scans, plus a live **Siege Log** (polls the API, colour-codes status, delete + pagination).
+- **Battle Report** — raw findings beside an animated **AI analysis** panel; analysis runs non-blocking with a spinner, exports to **PDF**, and the view is URL-routed (refresh/back work).
+- **Settings** — choose **Local · Ollama** vs **Cloud · Gemini** and supply your own key (BYOK); the footer shows the active provider and its privacy posture.
+
+</details>
+
+---
+
+## Project Structure
+
+<details>
+<summary><b>Directory tree</b></summary>
+
+<br />
+
+```
+Fortify/
+├── assets/                      # Static assets (logo, images, screenshots)
+├── docker-compose.yml           # One-command full stack
+├── fortify-backend/             # FastAPI backend & scanner logic
+│   ├── Dockerfile
+│   ├── main.py                  # FastAPI entry point
+│   ├── db.py                    # SQLite data layer (scan persistence)
+│   ├── analyzer/                # AI risk analysis (separate from the scanner)
+│   │   ├── analyzer.py          # Grounding, prompt building, deterministic levels
+│   │   └── llm.py               # LLM backend — Ollama / Gemini (pluggable)
+│   └── scanner/
+│       ├── passive/             # Read-only checks (tls, headers, status, runner)
+│       ├── active/              # Injection checks (sqli, xss, path_traversal, runner)
+│       └── config/              # Wordlists, payloads, signatures
+├── fortify-dashboard/           # React + Tailwind frontend (Vite)
+│   ├── Dockerfile
+│   └── src/
+│       ├── App.jsx              # Layout, shared state, hash routing
+│       └── components/          # Sidebar, ScanForm, SiegeLog, BattleReport, Settings
+├── requirements.txt
+├── LICENSE
+└── README.md
+```
+
+</details>
+
+---
+
+## Roadmap
+
+Fortify is built in phases. This table reflects the **actual** current state.
+
+| Phase | Scope | Status |
+|---|---|---|
+| **1 — Scanner core** | Passive (TLS, headers, sensitive paths) + active (SQLi, XSS, path traversal) | ✅ Done |
+| **2 — Backend + DB** | SQLite storage + FastAPI endpoints | ✅ Done |
+| **3 — AI Analyzer** | Grounded LLM risk scoring & remediation (Ollama + Gemini) | ✅ Done |
+| **4 — Dashboard** | Command, Battle Report, Settings (BYOK) | ✅ Done |
+| **5 — Polish** | Docker, PDF export, hardening (unguessable IDs, non-blocking analysis, URL routing), demo | ✅ Done |
+
+See the [open issues](https://github.com/Givemeboga/Fortify/issues) for what's next (deeper scanner coverage, notifications, scale).
+
+---
+
+## Responsible Use
+
+Fortify is intended for **authorized security testing only**. Only scan systems you **own** or have **explicit written permission** to test. Unauthorized scanning may be illegal under computer-misuse laws (e.g. the CFAA in the US and equivalents elsewhere). You are solely responsible for how you use this tool.
 
 ---
 
 ## Contributing
 
-Contributions are welcome! Here's how to get started:
+Contributions are welcome!
 
 1. Fork the repository
 2. Create a branch: `git checkout -b feature/your-feature`
 3. Commit your changes: `git commit -m "Add your feature"`
-4. Push to your branch: `git push origin feature/your-feature`
+4. Push: `git push origin feature/your-feature`
 5. Open a pull request
 
-Please make sure your code is clean and tested before submitting.
+Please keep code clean and tested before submitting.
 
 ---
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE) © 2026 Youssef Ben Chaouacha.
+Licensed under the [MIT License](LICENSE) © 2026 Youssef Ben Chaouacha.
