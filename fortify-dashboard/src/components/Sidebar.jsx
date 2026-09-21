@@ -1,3 +1,5 @@
+/* global __APP_VERSION__ */  // injected from package.json by Vite (vite.config.js)
+
 const OPERATIONS = [
   { label: "Command", view: "command", badge: null },
 ]
@@ -28,7 +30,7 @@ function Sidebar({ view, onNavigate, provider }) {
         <img src="/logo.png" alt="Fortify" className="w-10 h-10 rounded-full shrink-0" />
         <div>
           <div className="font-display text-2xl text-text leading-none">Fortify</div>
-          <div className="font-mono text-[10px] text-accent tracking-widest">THE KEEP · v1.0.0</div>
+          <div className="font-mono text-[10px] text-accent tracking-widest">THE KEEP · v{__APP_VERSION__}</div>
         </div>
       </div>
 
