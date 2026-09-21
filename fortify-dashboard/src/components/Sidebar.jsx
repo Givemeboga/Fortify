@@ -22,7 +22,7 @@ function Sidebar({ view, onNavigate, provider }) {
   )
 
   return (
-    <aside className="w-60 shrink-0 border-r border-border flex flex-col">
+    <aside className="w-60 shrink-0 border-r border-border flex flex-col print:hidden">
       {/* wordmark */}
       <div className="p-4 border-b border-border flex items-center gap-3">
         <img src="/logo.png" alt="Fortify" className="w-10 h-10 rounded-full shrink-0" />

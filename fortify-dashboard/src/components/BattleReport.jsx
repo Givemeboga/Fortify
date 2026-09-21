@@ -28,7 +28,7 @@ function useTypewriter(text, speed = 10) {
 
 function Panel({ title, children }) {
   return (
-    <div className="border border-border rounded p-4 bg-surface">
+    <div className="border border-border rounded p-4 bg-surface break-inside-avoid">
       <div className="font-mono text-[10px] text-faint uppercase tracking-widest mb-3">{title}</div>
       {children}
     </div>
@@ -77,16 +77,23 @@ function BattleReport({ scanId, onBack }) {
 
   return (
     <div className="max-w-6xl">
-      {/* header */}
-      <button onClick={onBack} className="font-mono text-xs text-muted hover:text-text mb-4">← Back to Command</button>
+      {/* header — nav row hidden when printing the PDF */}
+      <div className="flex items-center justify-between mb-4 print:hidden">
+        <button onClick={onBack} className="font-mono text-xs text-muted hover:text-text">← Back to Command</button>
+        <button onClick={() => window.print()} className="font-mono text-xs text-accent hover:brightness-110">Export PDF ↓</button>
+      </div>
       <div className="flex items-baseline gap-3">
         <h1 className="font-display text-3xl">Battle Report</h1>
         <span className="font-mono text-sm text-muted">{scan.target_url}</span>
       </div>
       <div className="font-mono text-xs text-muted mt-1">{scan.scan_type} · {scan.status}</div>
+      {/* print-only: timestamp + branding for the exported report */}
+      <div className="hidden print:block font-mono text-xs text-faint mt-1">
+        Generated {new Date().toLocaleString()} · Fortify
+      </div>
 
-      {/* two columns: analysis (left, wide) + raw details (right, narrow) */}
-      <div className="mt-6 grid grid-cols-3 gap-6 items-start">
+      {/* two columns on screen; stacked into one column for the printed page */}
+      <div className="mt-6 grid grid-cols-3 gap-6 items-start print:grid-cols-1 print:gap-4">
 
         {/* LEFT — AI analysis */}
         <div className="col-span-2">
@@ -102,7 +109,7 @@ function BattleReport({ scanId, onBack }) {
               <div className="font-mono text-sm text-crit mb-2">Analysis failed — the model errored or was unreachable.</div>
               <button
                 onClick={handleAnalyze}
-                className="bg-accent text-bg font-semibold px-4 py-1.5 rounded hover:brightness-110"
+                className="bg-accent text-bg font-semibold px-4 py-1.5 rounded hover:brightness-110 print:hidden"
               >
                 Retry
               </button>
@@ -113,7 +120,7 @@ function BattleReport({ scanId, onBack }) {
             <button
               onClick={handleAnalyze}
               disabled={scan.status !== "completed"}
-              className="bg-accent text-bg font-semibold px-5 py-2 rounded hover:brightness-110 disabled:opacity-40"
+              className="bg-accent text-bg font-semibold px-5 py-2 rounded hover:brightness-110 disabled:opacity-40 print:hidden"
             >
               Analyze with AI
             </button>
@@ -206,7 +213,7 @@ function AnalysisPanel({ analysis }) {
 
       <div className="p-5">
         <p className="text-sm text-muted leading-relaxed min-h-[3rem]">
-          {typedSummary}<span className="text-accent animate-pulse">▍</span>
+          {typedSummary}<span className="text-accent animate-pulse print:hidden">▍</span>
         </p>
 
         <div className="mt-5 space-y-2.5">
@@ -215,7 +222,7 @@ function AnalysisPanel({ analysis }) {
             return (
               <div
                 key={i}
-                className="flex gap-3 rounded border border-border bg-bg/40 p-3"
+                className="flex gap-3 rounded border border-border bg-bg/40 p-3 break-inside-avoid"
                 style={{ animation: "rise 0.4s ease both", animationDelay: `${300 + i * 140}ms` }}
               >
                 <div className={`w-0.5 rounded ${fs.bar}`} />

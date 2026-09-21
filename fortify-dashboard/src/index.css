@@ -34,3 +34,40 @@ body {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* Print / PDF export — light, document-style theme.
+   We redefine the design tokens inside @media print, so every Tailwind utility
+   that references them (bg-surface, text-text, text-crit, …) turns light
+   automatically — one override point instead of restyling every element.
+   App chrome (sidebar, nav + action buttons) is hidden via `print:hidden`. */
+@media print {
+  :root {
+    --color-bg: #ffffff;                     /* white page */
+    --color-surface: #ffffff;                /* panels blend into the page */
+    --color-surface-2: #f2f5f8;              /* faint header tint */
+    --color-border: rgba(20, 30, 50, 0.20);  /* light grey rules */
+    --color-text: #0a0e16;                   /* near-black body text */
+    --color-muted: #3f4a57;                  /* readable secondary grey */
+    --color-faint: #6b7480;
+    --color-accent: #0b63c4;                 /* darker azure for contrast on white */
+    --color-crit: #cc1f1f;                   /* severity colors nudged darker */
+    --color-high: #b4530c;                   /* so they read on white paper */
+    --color-med:  #8a6d00;
+    --color-low:  #1c8f4e;
+  }
+
+  /* force backgrounds and severity colors to actually render in the PDF */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body {
+    background-color: #ffffff;
+    color: var(--color-text);
+  }
+
+  @page {
+    margin: 1.5cm;
+  }
+}
