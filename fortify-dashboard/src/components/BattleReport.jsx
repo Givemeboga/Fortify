@@ -106,7 +106,9 @@ function BattleReport({ scanId, onBack }) {
             </div>
           ) : status === "failed" ? (
             <div className="border border-crit/40 rounded p-4 bg-surface">
-              <div className="font-mono text-sm text-crit mb-2">Analysis failed — the model errored or was unreachable.</div>
+              <div className="font-mono text-sm text-crit mb-2">
+                {analysis?.error || "Analysis failed — the model errored or was unreachable."}
+                </div>
               <button
                 onClick={handleAnalyze}
                 className="bg-accent text-bg font-semibold px-4 py-1.5 rounded hover:brightness-110 print:hidden"
