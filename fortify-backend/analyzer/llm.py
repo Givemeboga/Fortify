@@ -36,6 +36,14 @@ def _gemini_response(prompt: str, api_key: str) -> str:
     }
     response = requests.post(GEMINI_URL, headers=headers, json=payload, timeout=120)
     data = response.json()
-    if "error" in data:                       # ← surface the real API error
-        raise RuntimeError(f"Gemini API error: {data['error'].get('message')}")
+    if "error" in data:
+        err = data["error"]
+        code = err.get("code")
+        message = err.get("message", "")
+        if code == 503 or "overloaded" in message.lower():
+            raise RuntimeError("Gemini is temporarily overloaded (high demand). "
+                               "Try again in a moment, or switch to Ollama in Settings.")
+        if code == 429:
+            raise RuntimeError("Gemini rate limit reached — wait a bit and retry, or switch to Ollama.")
+        raise RuntimeError(f"Gemini error: {message}")
     return data["candidates"][0]["content"]["parts"][0]["text"]

@@ -132,3 +132,13 @@ def set_analysis_status(id: str, status: str) -> None:
     )
     conn.commit()
     conn.close()
+
+def fail_analysis(id: str, error_message: str) -> None:
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE scans SET analysis_status = ?, analysis = ? WHERE id = ?",
+        ("failed", json.dumps({"error": error_message}), id)
+    )
+    conn.commit()
+    conn.close()

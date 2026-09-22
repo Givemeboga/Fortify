@@ -1,7 +1,7 @@
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from pydantic import BaseModel, HttpUrl
 
-from db import init_db, create_scan, update_scan_results, get_scan, get_all_scans, update_scan_analysis, delete_scan, set_analysis_status
+from db import init_db, create_scan, update_scan_results, get_scan, get_all_scans, update_scan_analysis, delete_scan, set_analysis_status, fail_analysis
 
 from scanner.passive.runner import run_passive_scan
 from scanner.active.runner import run_active_scan
@@ -47,7 +47,7 @@ def run_analysis(scan_id: str, provider: str | None, api_key: str | None):
     except Exception as e:
         # Background tasks fail invisibly otherwise — log the reason before marking failed.
         print(f"[run_analysis] analysis failed for {scan_id}: {e!r}")
-        set_analysis_status(scan_id, "failed")
+        fail_analysis(scan_id, str(e))
 
 @app.post("/scan")
 def start_scan(request: ScanRequest, background_tasks: BackgroundTasks):
