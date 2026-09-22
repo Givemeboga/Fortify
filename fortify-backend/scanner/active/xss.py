@@ -1,4 +1,5 @@
 import requests
+import secrets
 from pathlib import Path
 
 from scanner.active.injector import inject_payload
@@ -20,10 +21,14 @@ def scan_xss(url: str) -> dict:
     requests_made = 0
     errors = 0
 
-    params = list(inject_payload(url, PAYLOADS[0]).keys())
+    token = "fortify-" + secrets.token_hex(8)
+
+    payloads = [p.replace("{TOKEN}", token) for p in PAYLOADS]
+
+    params = list(inject_payload(url, payloads[0]).keys())
 
     for param in params:
-        for payload in PAYLOADS:
+        for payload in payloads:
             injected_url = inject_payload(url, payload)[param]
             try:
                 response = requests.get(injected_url, timeout=10)

