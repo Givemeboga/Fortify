@@ -154,7 +154,15 @@ function BattleReport({ scanId, onBack }) {
                 <div>
                   <div className="text-faint">leaky:</div>
                   {Object.keys(results.headers.leaky_headers || {}).length
-                    ? Object.entries(results.headers.leaky_headers).map(([k, v]) => <div key={k} className="text-med break-all">· {k}: {v}</div>)
+                    ? Object.entries(results.headers.leaky_headers).map(([k, v]) => {
+                        const disc = results.headers.version_disclosures?.[k]
+                        return (
+                          <div key={k} className="break-all">
+                            <span className={disc ? "text-high" : "text-med"}>· {k}: {v}</span>
+                            {disc && <span className="text-high"> → discloses {disc.software} {disc.version}</span>}
+                          </div>
+                        )
+                      })
                     : <div className="text-low">none</div>}
                 </div>
               </div>
