@@ -21,7 +21,14 @@ def get_llm_response(prompt: str, provider: str | None = None, api_key: str | No
 
 
 def _ollama_response(prompt: str) -> str:
-    payload = {"model": OLLAMA_MODEL, "prompt": prompt, "format": "json", "stream": False}
+    # temperature 0 + fixed seed → near-deterministic output for the same scan
+    payload = {
+        "model": OLLAMA_MODEL,
+        "prompt": prompt,
+        "format": "json",
+        "stream": False,
+        "options": {"temperature": 0, "seed": 42},
+    }
     response = requests.post(OLLAMA_URL, json=payload, timeout=120)
     return response.json()["response"]
 
@@ -32,7 +39,7 @@ def _gemini_response(prompt: str, api_key: str) -> str:
     headers = {"x-goog-api-key": api_key}
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"responseMimeType": "application/json"},
+        "generationConfig": {"responseMimeType": "application/json", "temperature": 0},
     }
     response = requests.post(GEMINI_URL, headers=headers, json=payload, timeout=120)
     data = response.json()
