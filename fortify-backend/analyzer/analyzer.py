@@ -93,7 +93,7 @@ def extract_findings(results: dict) -> list[dict]:
             findings.append({"type": "exposed_path", "issue": f"Accessible sensitive path: {path}"})
 
     # --- Active checks ---
-    for check in ("sqli", "xss", "path_traversal"):
+    for check in ("sqli", "sqli_boolean", "xss", "path_traversal"):
         section = results.get(check, {})
         if section.get("vulnerable"):
             for f in section.get("findings", []):
