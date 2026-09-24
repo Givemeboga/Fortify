@@ -182,7 +182,7 @@ function BattleReport({ scanId, onBack }) {
             </Panel>
           )}
 
-          {["sqli", "xss", "path_traversal"].map((check) =>
+          {["sqli", "sqli_boolean", "xss", "path_traversal"].map((check) =>
             results[check] ? (
               <Panel key={check} title={check.replace("_", " ")}>
                 <div className="font-mono text-xs">
