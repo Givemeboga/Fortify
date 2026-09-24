@@ -44,10 +44,10 @@
 | Component | Description | Status |
 |---|---|---|
 | **Scanner** | Python module testing for common issues (headers, TLS, misconfigurations, injections) | 🟢 Passive + active |
-| **AI Analyzer** | LLM that reads scanner output, scores risk, and gives remediation — **local by default (Ollama)** so data stays on your machine; pluggable | 🟢 Complete |
+| **AI Analyzer** | Explains scanner findings and gives remediation, with severity **scored deterministically in code** — **local by default (Ollama)** so data stays on your machine; pluggable | 🟢 Complete |
 | **Dashboard** | React + Tailwind console to launch scans, watch the live Siege Log, read AI reports, and pick the provider | 🟢 Complete |
 
-> ⚠️ **AI output is guidance, not ground truth.** Severity scoring is the LLM's judgment and can vary; the scanner's raw results are the authoritative facts. Treat the analysis as a triage starting point.
+> ⚠️ **AI output is guidance, not ground truth.** The scanner's raw results are the authoritative facts, and the AI's explanations are a triage starting point — verify before acting. (Severity **scores are computed deterministically in code**, not by the LLM, so they don't drift between runs.)
 
 ---
 
@@ -254,15 +254,15 @@ Scan IDs are unguessable strings (not sequential), and invalid URLs / unknown `s
 ### Passive scanner (read-only, safe)
 
 - **TLS** — protocol version, certificate expiry/validity, cipher suite
-- **Headers** — missing defensive headers, present headers, leaky (version-disclosing) headers, redirect chain
+- **Headers** — missing defensive headers, present headers, leaky headers (with **software + version extracted** when disclosed, e.g. `Server: nginx/1.18.0` → `nginx 1.18.0`), redirect chain
 - **Sensitive paths** — probes common exposed paths (`/.env`, `/.git/`, `/admin`, …). Exposure is judged by **content signals** (content-type + body fingerprints), not a bare `200`, so sites that return real pages for those paths don't false-positive; public-by-design paths (`robots.txt`) are excluded.
 
 ### Active scanner (injection-based, opt-in & consent-gated)
 
 Injects payloads into each URL query parameter and reports the vulnerable parameter, the triggering payload, the matched signal, and scan-health counters (`requests_made`, `errors`) so a failed scan is never mistaken for a clean one:
 
-- **SQL injection** — flags a parameter when a payload makes the response leak a database error signature.
-- **Cross-site scripting (XSS)** — flags a parameter when a script payload is reflected **unescaped** (exact-match, so escaped reflections are cleared).
+- **SQL injection** — **error-based** (a payload makes the response leak a database error signature) *and* **boolean-based blind** (compares a TRUE vs FALSE condition and flags a parameter when the two responses differ meaningfully — catching injections that leak no error).
+- **Cross-site scripting (XSS)** — injects a **unique per-scan token** and flags a parameter when it's reflected **unescaped** (exact-match, so escaped reflections are cleared and pre-existing page content can't trigger a false positive).
 - **Path traversal** — flags a parameter when a `../` payload leaks system-file contents (e.g. `/etc/passwd`).
 
 ### FastAPI backend
@@ -273,7 +273,7 @@ Scans run as background tasks; results persist to **SQLite** with a full create 
 
 Turns raw scan facts into an interpreted risk report: overall risk score/level, plain-language summary, per-finding severity + remediation, and a prioritized fix order. It runs on a **local LLM via [Ollama](https://ollama.com)** by default (data never leaves your machine); a **cloud option (Google Gemini)** is available opt-in, BYOK, from Settings.
 
-To stay trustworthy, the analyzer is **grounded**: findings are extracted from the scan results **deterministically in code** first, and the LLM is asked only to *explain and score confirmed findings* — never to invent new ones. Risk **levels are computed from scores in code** (so they can't disagree), and every report carries a verify-before-acting disclaimer.
+To stay trustworthy, the analyzer is **grounded** and the numbers are **deterministic**: findings are extracted from the scan results **in code** first, and each is assigned a severity **score and level by a fixed rule table in code** (with context bumps — e.g. a version-disclosing header scores higher than a bare one; an exposed `.env` higher than a generic path). The LLM is asked only to *explain, remediate, and summarize* the confirmed findings — **never to score or invent** them. It runs at **temperature 0**, so the same scan yields the same report every time. Every report carries a verify-before-acting disclaimer.
 
 ### Dashboard (React + Tailwind)
 
