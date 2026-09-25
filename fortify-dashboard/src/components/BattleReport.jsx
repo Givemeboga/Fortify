@@ -62,7 +62,12 @@ function BattleReport({ scanId, onBack }) {
     setScan((prev) => ({ ...prev, analysis_status: "analyzing" }))
   }
 
-  if (!scan) return <div className="font-mono text-muted">Loading…</div>
+  if (!scan) return (
+    <div className="font-mono py-6">
+      <div className="text-sm text-text">The gate grinds open</div>
+      <div className="text-xs text-muted mt-1">Unrolling the dispatch…</div>
+    </div>
+  )
 
   const results = scan.results || {}
   const analysis = scan.analysis
@@ -92,16 +97,18 @@ function BattleReport({ scanId, onBack }) {
         <div className="col-span-2">
           {status === "analyzing" ? (
             <Panel variant="iron" className="flex items-center gap-3">
-              <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-              <span className="font-mono text-sm text-muted animate-pulse">
-                Consulting the war council… the model is thinking.
-              </span>
+              <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin shrink-0" />
+              <div>
+                <div className="font-mono text-sm text-text">Counsel is drafting the report</div>
+                <div className="font-mono text-xs text-muted animate-pulse">Weighing the findings…</div>
+              </div>
             </Panel>
           ) : status === "failed" ? (
             <div className="border border-crit/40 rounded p-4 bg-surface">
-              <div className="font-mono text-sm text-crit mb-2">
-                {analysis?.error || "Analysis failed — the model errored or was unreachable."}
-                </div>
+              <div className="font-mono text-sm text-crit">Counsel could not convene</div>
+              <div className="font-mono text-xs text-muted mt-1 mb-3">
+                {analysis?.error || "The model errored or was unreachable."}
+              </div>
               <button
                 onClick={handleAnalyze}
                 className="bg-accent text-bg font-semibold px-4 py-1.5 rounded hover:brightness-110 print:hidden"

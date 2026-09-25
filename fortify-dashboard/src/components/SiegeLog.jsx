@@ -41,8 +41,9 @@ function SiegeLog({ scans, onDelete, onSelect }) {
 
       {/* empty state */}
       {scans.length === 0 ? (
-        <div className="font-mono text-sm text-faint py-6">
-          The watch is quiet — launch your first patrol.
+        <div className="font-mono py-6">
+          <div className="text-sm text-text">The watch is quiet.</div>
+          <div className="text-xs text-muted mt-1">No scans yet — enter a URL above to run your first patrol.</div>
         </div>
       ) : (
         <table className="w-full text-sm">
