@@ -16,8 +16,8 @@ function Settings({ onProviderSaved }) {
   const Option = ({ value, title, desc }) => (
     <div
       onClick={() => setProvider(value)}
-      className={`flex-1 border rounded p-4 cursor-pointer ${
-        provider === value ? "border-accent bg-accent/5" : "border-border hover:border-muted"
+      className={`flex-1 p-4 cursor-pointer ${
+        provider === value ? "panel-iron" : "panel-stone"
       }`}
     >
       <div className="flex items-center gap-2">

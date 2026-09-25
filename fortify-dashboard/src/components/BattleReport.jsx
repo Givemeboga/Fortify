@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import Panel from './Panel'
 
 const LEVEL_STYLES = {
   critical: { chip: "bg-crit/15 text-crit border-crit/40", bar: "bg-crit" },
@@ -24,15 +25,6 @@ function useTypewriter(text, speed = 10) {
     return () => clearInterval(id)
   }, [text, speed])
   return shown
-}
-
-function Panel({ title, children }) {
-  return (
-    <div className="border border-border rounded p-4 bg-surface break-inside-avoid">
-      <div className="font-mono text-[10px] text-faint uppercase tracking-widest mb-3">{title}</div>
-      {children}
-    </div>
-  )
 }
 
 function BattleReport({ scanId, onBack }) {
@@ -98,12 +90,12 @@ function BattleReport({ scanId, onBack }) {
         {/* LEFT — AI analysis */}
         <div className="col-span-2">
           {status === "analyzing" ? (
-            <div className="flex items-center gap-3 border border-border rounded p-4 bg-surface">
+            <Panel variant="iron" className="flex items-center gap-3">
               <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
               <span className="font-mono text-sm text-muted animate-pulse">
                 Consulting the war council… the model is thinking.
               </span>
-            </div>
+            </Panel>
           ) : status === "failed" ? (
             <div className="border border-crit/40 rounded p-4 bg-surface">
               <div className="font-mono text-sm text-crit mb-2">
