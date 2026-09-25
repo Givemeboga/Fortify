@@ -4,6 +4,7 @@ import Settings from './components/Settings'
 import ScanForm from './components/ScanForm'
 import SiegeLog from './components/SiegeLog'
 import BattleReport from './components/BattleReport'
+import IconSprite from './components/icons/IconSprite'
 
 function useHashRoute() {
   const [hash, setHash] = useState(window.location.hash || "#/")
@@ -50,6 +51,8 @@ useEffect(() => {
 }, [])
 
   return (
+    <>
+    <IconSprite />
     <div className="flex min-h-screen bg-bg text-text">
       <Sidebar view={view} onNavigate={(v) => navigate(v === "settings" ? "#/settings" : "#/")} provider={provider} />
       <main className="flex-1 p-8">
@@ -67,6 +70,7 @@ useEffect(() => {
         )}
       </main>
     </div>
+    </>
   )
 }
 
