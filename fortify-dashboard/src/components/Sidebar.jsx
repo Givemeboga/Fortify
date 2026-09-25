@@ -1,27 +1,34 @@
 /* global __APP_VERSION__ */  // injected from package.json by Vite (vite.config.js)
+import { Watchtower, Scroll } from './icons/Icons'
 
 const OPERATIONS = [
-  { label: "Command", view: "command", badge: null },
+  { label: "Command", view: "command", badge: null, icon: Watchtower },
 ]
 const COUNSEL = [
-  { label: "Settings", view: "settings", badge: null },
+  { label: "Settings", view: "settings", badge: null, icon: Scroll },
 ]
 
 function Sidebar({ view, onNavigate, provider }) {
-  const renderItem = (item) => (
-    <div
-      key={item.label}
-      onClick={() => onNavigate(item.view)}
-      className={`flex justify-between items-center px-2 py-1.5 rounded cursor-pointer ${
-        view === item.view ? "bg-surface-2 text-text" : "text-muted hover:text-text hover:bg-surface-2"
-      }`}
-    >
-      <span className="text-sm">{item.label}</span>
-      {item.badge && (
-        <span className="font-mono text-[10px] text-accent bg-accent/20 px-2 py-0.5 rounded-full">{item.badge}</span>
-      )}
-    </div>
-  )
+  const renderItem = (item) => {
+    const Icon = item.icon
+    return (
+      <div
+        key={item.label}
+        onClick={() => onNavigate(item.view)}
+        className={`flex justify-between items-center px-2 py-1.5 rounded cursor-pointer ${
+          view === item.view ? "bg-surface-2 text-text" : "text-muted hover:text-text hover:bg-surface-2"
+        }`}
+      >
+        <span className="flex items-center gap-2.5 text-sm">
+          {Icon && <Icon size={16} className="shrink-0" />}
+          {item.label}
+        </span>
+        {item.badge && (
+          <span className="font-mono text-[10px] text-accent bg-accent/20 px-2 py-0.5 rounded-full">{item.badge}</span>
+        )}
+      </div>
+    )
+  }
 
   return (
     <aside className="w-60 shrink-0 border-r border-border flex flex-col print:hidden">

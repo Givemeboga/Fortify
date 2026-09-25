@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Banner, Eye, Swords, Portcullis } from './icons/Icons'
 
 function ScanForm({ onScanStarted }) {          // ← FIX: destructure props with { }
   const [url, setUrl] = useState("")
@@ -34,8 +35,9 @@ function ScanForm({ onScanStarted }) {          // ← FIX: destructure props wi
         />
         <button
           onClick={handleScan}
-          className="bg-accent text-bg font-semibold px-6 rounded hover:brightness-110"
+          className="flex items-center gap-2 bg-accent text-bg font-semibold px-6 rounded hover:brightness-110"
         >
+          <Banner size={16} />
           Scan
         </button>
       </div>
@@ -44,18 +46,20 @@ function ScanForm({ onScanStarted }) {          // ← FIX: destructure props wi
       <div className="flex gap-2 mt-3">
         <button
           onClick={() => setScanType("passive")}
-          className={`px-4 py-1.5 rounded font-mono text-xs uppercase tracking-wider border ${
+          className={`flex items-center gap-2 px-4 py-1.5 rounded font-mono text-xs uppercase tracking-wider border ${
             scanType === "passive" ? "bg-accent text-bg border-accent" : "border-border text-muted hover:text-text"
           }`}
         >
+          <Eye size={14} />
           Passive · The Watch
         </button>
         <button
           onClick={() => setScanType("active")}
-          className={`px-4 py-1.5 rounded font-mono text-xs uppercase tracking-wider border ${
+          className={`flex items-center gap-2 px-4 py-1.5 rounded font-mono text-xs uppercase tracking-wider border ${
             scanType === "active" ? "bg-high text-bg border-high" : "border-border text-muted hover:text-text"
           }`}
         >
+          <Swords size={14} />
           Active · The Siege
         </button>
       </div>
@@ -63,7 +67,10 @@ function ScanForm({ onScanStarted }) {          // ← FIX: destructure props wi
       {/* consent gate — only when active is selected */}
       {scanType === "active" && (
         <div className="mt-3 border border-high/50 rounded p-3 bg-high/5">
-          <div className="font-mono text-xs text-high uppercase tracking-wider mb-2">Siege Mode · Opt-in</div>
+          <div className="flex items-center gap-2 font-mono text-xs text-high uppercase tracking-wider mb-2">
+            <Portcullis size={14} />
+            Siege Mode · Opt-in
+          </div>
           <label className="flex items-start gap-2 text-sm text-muted cursor-pointer">
             <input
               type="checkbox"
