@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Panel from './Panel'
+import SeverityStrip from './SeverityStrip'
 
 const LEVEL_STYLES = {
   critical: { chip: "bg-crit/15 text-crit border-crit/40", bar: "bg-crit" },
@@ -109,7 +110,10 @@ function BattleReport({ scanId, onBack }) {
               </button>
             </div>
           ) : analysis ? (
-            <AnalysisPanel analysis={analysis} />
+            <div className="space-y-4">
+              <SeverityStrip findings={analysis.findings} />
+              <AnalysisPanel analysis={analysis} />
+            </div>
           ) : (
             <button
               onClick={handleAnalyze}
@@ -219,15 +223,20 @@ function AnalysisPanel({ analysis }) {
         </p>
 
         <div className="mt-5 space-y-2.5">
-          {analysis.findings?.map((f, i) => {
+          {[...(analysis.findings || [])]
+            .sort((a, b) => (b.severity?.score || 0) - (a.severity?.score || 0))
+            .map((f, i) => {
             const fs = levelStyle(f.severity?.level)
+            const level = f.severity?.level
+            const shell = level === "critical" ? "panel-iron panel-iron--crit" : "panel-stone"
+            const barW = level === "critical" || level === "high" ? "w-1" : "w-0.5"
             return (
               <div
                 key={i}
-                className="flex gap-3 rounded border border-border bg-bg/40 p-3 break-inside-avoid"
+                className={`${shell} flex gap-3 p-3 break-inside-avoid`}
                 style={{ animation: "rise 0.4s ease both", animationDelay: `${300 + i * 140}ms` }}
               >
-                <div className={`w-0.5 rounded ${fs.bar}`} />
+                <div className={`${barW} rounded ${fs.bar}`} />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`font-mono text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border ${fs.chip}`}>
