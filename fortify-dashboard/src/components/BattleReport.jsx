@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Panel from './Panel'
 import SeverityStrip from './SeverityStrip'
 import { Icon } from './icons/Icons'
+import { GateLoader, QuillWriter } from './StateGraphics'
 
 const SEV_ICON = { critical: "i-sev-crit", high: "i-sev-high", medium: "i-sev-med", low: "i-sev-low" }
 
@@ -66,9 +67,12 @@ function BattleReport({ scanId, onBack }) {
   }
 
   if (!scan) return (
-    <div className="font-mono py-6">
-      <div className="text-sm text-text">The gate grinds open</div>
-      <div className="text-xs text-muted mt-1">Unrolling the dispatch…</div>
+    <div className="flex items-center gap-4 font-mono py-6">
+      <GateLoader />
+      <div>
+        <div className="text-sm text-text">The gate grinds open</div>
+        <div className="text-xs text-muted mt-1">Unrolling the dispatch…</div>
+      </div>
     </div>
   )
 
@@ -99,8 +103,8 @@ function BattleReport({ scanId, onBack }) {
         {/* LEFT — AI analysis */}
         <div className="col-span-2">
           {status === "analyzing" ? (
-            <Panel variant="iron" className="flex items-center gap-3">
-              <span className="anim-glow shrink-0 print:hidden"><Icon id="i-quill" size={22} className="text-accent" /></span>
+            <Panel variant="iron" className="flex items-center gap-4">
+              <QuillWriter />
               <div>
                 <div className="font-mono text-sm text-text">Counsel is drafting the report</div>
                 <div className="font-mono text-xs text-muted animate-pulse">Weighing the findings…</div>

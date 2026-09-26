@@ -72,7 +72,7 @@ function SiegeLog({ scans, onDelete, onSelect }) {
                 <td className="py-2 pr-6 font-mono text-muted">{scan.scan_type}</td>
                 <td className="py-2 pr-6">
                   <span className="flex items-center gap-2 font-mono text-xs text-muted">
-                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusDot(scan.status)}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusDot(scan.status)} ${(scan.status === "pending" || scan.status === "running") ? "anim-pulse" : ""}`} />
                     {scan.status}
                   </span>
                 </td>

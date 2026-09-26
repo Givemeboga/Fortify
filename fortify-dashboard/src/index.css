@@ -103,9 +103,16 @@ body {
 .anim-flick   { animation: kp-flick 2.2s ease-in-out infinite; transform-origin: center bottom; }
 .anim-flutter { animation: kp-flutter 3s ease-in-out infinite; transform-origin: left center; }
 .anim-gate    { animation: kp-gate 3.4s ease-in-out infinite; }
+.anim-pulse   { animation: kp-pulse 1.6s ease-in-out infinite; }
+.anim-write   { animation: kp-write 3.6s ease-in-out infinite; }
+.anim-ink1    { animation: kp-ink1 3.6s ease-in-out infinite; }
+.anim-ink2    { animation: kp-ink2 3.6s ease-in-out infinite; }
+.anim-ink3    { animation: kp-ink3 3.6s ease-in-out infinite; }
+.anim-ink4    { animation: kp-ink4 3.6s ease-in-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  .anim-flick, .anim-glow, .anim-flutter, .anim-gate, .anim-write { animation: none !important; }
+  .anim-flick, .anim-glow, .anim-flutter, .anim-gate, .anim-write, .anim-pulse,
+  .anim-ink1, .anim-ink2, .anim-ink3, .anim-ink4 { animation: none !important; }
 }
 
 /* Print / PDF export — light, document-style theme.

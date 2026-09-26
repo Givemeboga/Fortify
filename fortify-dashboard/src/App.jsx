@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Sidebar from './components/Sidebar'
 import Settings from './components/Settings'
 import ScanForm from './components/ScanForm'
 import SiegeLog from './components/SiegeLog'
 import BattleReport from './components/BattleReport'
 import IconSprite from './components/icons/IconSprite'
+import Toast from './components/Toast'
 
 function useHashRoute() {
   const [hash, setHash] = useState(window.location.hash || "#/")
@@ -31,10 +32,31 @@ function App() {
     window.location.hash = to
   }
   const [provider, setProvider] = useState(localStorage.getItem("fortify_provider") || "ollama")  // active AI provider (shared)
+  const [toasts, setToasts] = useState([])
+  const prevStatus = useRef({})   // scan id → last-seen status, to detect completions
+
+  function dismissToast(id) {
+    setToasts((t) => t.filter((x) => x.id !== id))
+  }
+
   // fetch all scans from the backend
   async function loadScans() {
     const res = await fetch("http://localhost:8500/scans")
     const data = await res.json()
+    // toast when a scan transitions into "completed" (pennant, or brazier if critical)
+    const fresh = []
+    for (const s of data) {
+      const prev = prevStatus.current[s.id]
+      if (prev && prev !== "completed" && s.status === "completed") {
+        const critical = s.analysis?.overall_risk?.level === "critical"
+        fresh.push({ id: `${s.id}-${Date.now()}`, kind: critical ? "critical" : "dispatch", detail: s.target_url })
+      }
+      prevStatus.current[s.id] = s.status
+    }
+    if (fresh.length) {
+      setToasts((t) => [...t, ...fresh])
+      fresh.forEach((f) => setTimeout(() => dismissToast(f.id), 6000))
+    }
     setScans(data)
   }
 
@@ -53,6 +75,7 @@ useEffect(() => {
   return (
     <>
     <IconSprite />
+    <Toast toasts={toasts} onDismiss={dismissToast} />
     <div className="flex min-h-screen bg-bg text-text">
       <Sidebar view={view} onNavigate={(v) => navigate(v === "settings" ? "#/settings" : "#/")} provider={provider} />
       <main className="flex-1 p-8">
