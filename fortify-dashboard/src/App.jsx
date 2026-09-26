@@ -4,6 +4,7 @@ import Settings from './components/Settings'
 import ScanForm from './components/ScanForm'
 import SiegeLog from './components/SiegeLog'
 import BattleReport from './components/BattleReport'
+import Overview from './components/Overview'
 import IconSprite from './components/icons/IconSprite'
 import Toast from './components/Toast'
 
@@ -20,13 +21,15 @@ function useHashRoute() {
 function App() {
   const [scans, setScans] = useState([])   // the list of scans, shared state
   const hash = useHashRoute()                  // current hash route
-  let view = "command"                          // default view
+  let view = "command"                          // default view = the Command overview
   let selectedScanId = null                     // default: no scan selected
   if (hash === "#/settings") {
     view = "settings"
   } else if (hash.startsWith("#/scans/")) {
     view = "battle-report"
     selectedScanId = hash.slice("#/scans/".length)  // extract the scan ID from the hash
+  } else if (hash === "#/scans") {
+    view = "log"                                // the full Siege Log lives on its own route now
   }
   function navigate(to) {
     window.location.hash = to
@@ -93,19 +96,29 @@ useEffect(() => {
     <IconSprite />
     <Toast toasts={toasts} onDismiss={dismissToast} />
     <div className="flex min-h-screen bg-bg text-text">
-      <Sidebar view={view} onNavigate={(v) => navigate(v === "settings" ? "#/settings" : "#/")} provider={provider} />
+      <Sidebar
+        view={view}
+        onNavigate={(v) => navigate(v === "settings" ? "#/settings" : v === "log" ? "#/scans" : "#/")}
+        provider={provider}
+      />
       <main className="flex-1 p-8">
         {view === "settings" ? (
           <Settings onProviderSaved={setProvider} />
-        ) : selectedScanId !== null ? (
+        ) : view === "battle-report" ? (
           <BattleReport scanId={selectedScanId} onBack={() => navigate("#/")} />
-        ) : (
+        ) : view === "log" ? (
           <>
-            <h1 className="font-display text-3xl">Command</h1>
-            <span className="font-mono text-xs text-muted tracking-widest uppercase">// perimeter control</span>
-            <ScanForm onScanStarted={loadScans} />
-            <SiegeLog scans={scans} onDelete={handleDelete} onSelect={(id) => navigate(`#/scans/${id}`)} />
+            <h1 className="font-display text-3xl">Siege Log</h1>
+            <span className="font-mono text-xs text-muted tracking-widest uppercase">// the full muster</span>
+            <SiegeLog scans={scans} onDelete={handleDelete} onSelect={(id) => navigate(`#/scans/${id}`)} heading={null} />
           </>
+        ) : (
+          <Overview
+            scans={scans}
+            onScanStarted={loadScans}
+            onSelect={(id) => navigate(`#/scans/${id}`)}
+            onViewAll={() => navigate("#/scans")}
+          />
         )}
       </main>
     </div>

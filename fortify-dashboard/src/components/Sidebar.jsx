@@ -1,8 +1,9 @@
 /* global __APP_VERSION__ */  // injected from package.json by Vite (vite.config.js)
-import { Watchtower, Scroll } from './icons/Icons'
+import { Watchtower, Scroll, Swords } from './icons/Icons'
 
 const OPERATIONS = [
   { label: "Command", view: "command", badge: null, icon: Watchtower },
+  { label: "Siege Log", view: "log", badge: null, icon: Swords },
 ]
 const COUNSEL = [
   { label: "Settings", view: "settings", badge: null, icon: Scroll },
