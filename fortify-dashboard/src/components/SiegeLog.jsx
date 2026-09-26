@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { Icon } from './icons/Icons'
 
 // Status = low-weight dot + label (a scan's lifecycle, not its risk).
+// Live/in-progress rows stay plain — operators read status fast (per handoff).
 const STATUS_DOT = {
   completed: "bg-low",
   running:   "bg-accent",
@@ -10,15 +12,15 @@ const STATUS_DOT = {
 function statusDot(status) {
   return STATUS_DOT[status] || "bg-muted"
 }
-const ACTIVE_STATUS = new Set(["pending", "running"])
 
-// Severity = the louder signal (a bordered, tinted badge).
+// Severity = the louder signal (a bordered, tinted badge + shield icon).
 const SEVERITY_BADGE = {
   critical: "text-crit border-crit/40 bg-crit/10",
   high:     "text-high border-high/40 bg-high/10",
   medium:   "text-med border-med/40 bg-med/10",
   low:      "text-low border-low/40 bg-low/10",
 }
+const SEV_ICON = { critical: "i-sev-crit", high: "i-sev-high", medium: "i-sev-med", low: "i-sev-low" }
 
 function formatTime(iso) {
   return new Date(iso).toLocaleString()
@@ -64,7 +66,7 @@ function SiegeLog({ scans, onDelete, onSelect }) {
               <tr
                 key={scan.id}
                 onClick={() => onSelect(scan.id)}
-                className={`border-b border-border/50 hover:bg-surface-2 cursor-pointer ${ACTIVE_STATUS.has(scan.status) ? "row-active" : ""}`}
+                className="border-b border-border/50 hover:bg-surface-2 cursor-pointer"
               >
                 <td className="py-2 pr-6 font-mono text-text whitespace-nowrap">{scan.target_url}</td>
                 <td className="py-2 pr-6 font-mono text-muted">{scan.scan_type}</td>
@@ -76,7 +78,8 @@ function SiegeLog({ scans, onDelete, onSelect }) {
                 </td>
                 <td className="py-2 pr-6">
                   {level ? (
-                    <span className={`font-mono text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${SEVERITY_BADGE[level] || "text-muted border-border"}`}>
+                    <span className={`inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase px-2 py-0.5 rounded-[2px] border ${SEVERITY_BADGE[level] || "text-muted border-border"}`}>
+                      <Icon id={SEV_ICON[level]} size={12} />
                       {level}
                     </span>
                   ) : (
