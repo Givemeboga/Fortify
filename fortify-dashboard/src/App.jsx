@@ -33,7 +33,8 @@ function App() {
   }
   const [provider, setProvider] = useState(localStorage.getItem("fortify_provider") || "ollama")  // active AI provider (shared)
   const [toasts, setToasts] = useState([])
-  const prevStatus = useRef({})   // scan id → last-seen status, to detect completions
+  const prevStatus = useRef({})     // scan id → last-seen scan status
+  const prevAnalysis = useRef({})   // scan id → last-seen analysis_status
 
   function dismissToast(id) {
     setToasts((t) => t.filter((x) => x.id !== id))
@@ -43,15 +44,23 @@ function App() {
   async function loadScans() {
     const res = await fetch("http://localhost:8500/scans")
     const data = await res.json()
-    // toast when a scan transitions into "completed" (pennant, or brazier if critical)
     const fresh = []
     for (const s of data) {
+      // scan finished → pennant ("Dispatch arrived")
       const prev = prevStatus.current[s.id]
       if (prev && prev !== "completed" && s.status === "completed") {
-        const critical = s.analysis?.overall_risk?.level === "critical"
-        fresh.push({ id: `${s.id}-${Date.now()}`, kind: critical ? "critical" : "dispatch", detail: s.target_url })
+        fresh.push({ id: `${s.id}-scan-${Date.now()}`, kind: "dispatch", detail: s.target_url })
       }
       prevStatus.current[s.id] = s.status
+
+      // analysis finished with a critical verdict → brazier ("A signal fire is lit").
+      // Severity only exists once analysis completes, so this is the moment to check it.
+      const prevA = prevAnalysis.current[s.id]
+      if (prevA === "analyzing" && s.analysis_status === "completed"
+          && s.analysis?.overall_risk?.level === "critical") {
+        fresh.push({ id: `${s.id}-crit-${Date.now()}`, kind: "critical", detail: s.target_url })
+      }
+      prevAnalysis.current[s.id] = s.analysis_status
     }
     if (fresh.length) {
       setToasts((t) => [...t, ...fresh])
