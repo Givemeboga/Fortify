@@ -98,6 +98,10 @@ body {
 @keyframes kp-flutter { 0%,100%{transform:skewY(0) scaleX(1)} 30%{transform:skewY(-5deg) scaleX(.93)} 65%{transform:skewY(3deg) scaleX(.97)} }
 @keyframes kp-gate    { 0%,12%{transform:translateY(0)} 62%,86%{transform:translateY(-104px)} 100%{transform:translateY(0)} }
 @keyframes kp-write   { 0%{transform:translate(0,0)} 22%{transform:translate(200px,0)} 25%{transform:translate(0,22px)} 47%{transform:translate(180px,22px)} 50%{transform:translate(0,44px)} 72%{transform:translate(196px,44px)} 75%{transform:translate(0,66px)} 95%,100%{transform:translate(120px,66px)} }
+@keyframes kp-ink1    { 0%{transform:scaleX(0)} 22%,100%{transform:scaleX(1)} }
+@keyframes kp-ink2    { 0%,25%{transform:scaleX(0)} 47%,100%{transform:scaleX(1)} }
+@keyframes kp-ink3    { 0%,50%{transform:scaleX(0)} 72%,100%{transform:scaleX(1)} }
+@keyframes kp-ink4    { 0%,75%{transform:scaleX(0)} 95%,100%{transform:scaleX(1)} }
 
 .anim-glow    { animation: kp-glow 1.8s ease-in-out infinite; transform-origin: center; }
 .anim-flick   { animation: kp-flick 2.2s ease-in-out infinite; transform-origin: center bottom; }
@@ -105,10 +109,10 @@ body {
 .anim-gate    { animation: kp-gate 3.4s ease-in-out infinite; }
 .anim-pulse   { animation: kp-pulse 1.6s ease-in-out infinite; }
 .anim-write   { animation: kp-write 3.6s ease-in-out infinite; }
-.anim-ink1    { animation: kp-ink1 3.6s ease-in-out infinite; }
-.anim-ink2    { animation: kp-ink2 3.6s ease-in-out infinite; }
-.anim-ink3    { animation: kp-ink3 3.6s ease-in-out infinite; }
-.anim-ink4    { animation: kp-ink4 3.6s ease-in-out infinite; }
+.anim-ink1    { animation: kp-ink1 3.6s ease-in-out infinite; transform-origin: left center; }
+.anim-ink2    { animation: kp-ink2 3.6s ease-in-out infinite; transform-origin: left center; }
+.anim-ink3    { animation: kp-ink3 3.6s ease-in-out infinite; transform-origin: left center; }
+.anim-ink4    { animation: kp-ink4 3.6s ease-in-out infinite; transform-origin: left center; }
 
 @media (prefers-reduced-motion: reduce) {
   .anim-flick, .anim-glow, .anim-flutter, .anim-gate, .anim-write, .anim-pulse,

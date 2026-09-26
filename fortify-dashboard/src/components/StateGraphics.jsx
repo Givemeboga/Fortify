@@ -19,8 +19,8 @@ export function QuillWriter() {
       {[0, 1, 2, 3].map((n) => (
         <div
           key={n}
-          className={`absolute h-[2px] bg-accent/70 anim-ink${n + 1}`}
-          style={{ top: n * 22 + 16, left: 0, width: 0 }}
+          className={`absolute h-[2px] bg-accent/80 anim-ink${n + 1}`}
+          style={{ top: n * 22 + 16, left: 0, width: [188, 172, 190, 116][n] }}
         />
       ))}
       <span className="anim-write absolute" style={{ top: -4, left: -4 }}>
