@@ -110,12 +110,12 @@ useEffect(() => {
           <>
             <h1 className="font-display text-3xl">Siege Log</h1>
             <span className="font-mono text-xs text-muted tracking-widest uppercase">// the full muster</span>
+            <ScanForm onScanStarted={loadScans} />
             <SiegeLog scans={scans} onDelete={handleDelete} onSelect={(id) => navigate(`#/scans/${id}`)} heading={null} />
           </>
         ) : (
           <Overview
             scans={scans}
-            onScanStarted={loadScans}
             onSelect={(id) => navigate(`#/scans/${id}`)}
             onViewAll={() => navigate("#/scans")}
           />

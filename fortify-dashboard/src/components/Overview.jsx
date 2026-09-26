@@ -1,4 +1,3 @@
-import ScanForm from './ScanForm'
 import SiegeLog from './SiegeLog'
 import { Icon } from './icons/Icons'
 
@@ -54,7 +53,7 @@ function vulnBreakdown(scans) {
   return counts
 }
 
-export default function Overview({ scans, onScanStarted, onSelect, onViewAll }) {
+export default function Overview({ scans, onSelect, onViewAll }) {
   const counts = rollup(scans)
   const ops = opsSummary(scans)
   const vulns = vulnBreakdown(scans)
@@ -63,9 +62,6 @@ export default function Overview({ scans, onScanStarted, onSelect, onViewAll }) 
     <>
       <h1 className="font-display text-3xl">Command</h1>
       <span className="font-mono text-xs text-muted tracking-widest uppercase">// perimeter control</span>
-
-      {/* Primary action — kept immediate on the landing page */}
-      <ScanForm onScanStarted={onScanStarted} />
 
       {/* Operations summary — neutral fleet context */}
       <div className="mt-8 grid grid-cols-3 gap-3">
