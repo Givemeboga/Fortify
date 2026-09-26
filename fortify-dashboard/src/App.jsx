@@ -109,7 +109,7 @@ useEffect(() => {
         ) : view === "log" ? (
           <>
             <h1 className="font-display text-3xl">Siege Log</h1>
-            <span className="font-mono text-xs text-muted tracking-widest uppercase">// the full muster</span>
+            <span className="font-mono text-xs text-muted tracking-widest uppercase">// muster &amp; dispatch</span>
             <ScanForm onScanStarted={loadScans} />
             <SiegeLog scans={scans} onDelete={handleDelete} onSelect={(id) => navigate(`#/scans/${id}`)} heading={null} />
           </>

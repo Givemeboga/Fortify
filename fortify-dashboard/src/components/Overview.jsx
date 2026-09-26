@@ -61,7 +61,7 @@ export default function Overview({ scans, onSelect, onViewAll }) {
   return (
     <>
       <h1 className="font-display text-3xl">Command</h1>
-      <span className="font-mono text-xs text-muted tracking-widest uppercase">// perimeter control</span>
+      <span className="font-mono text-xs text-muted tracking-widest uppercase">// state of the keep</span>
 
       {/* Operations summary — neutral fleet context */}
       <div className="mt-8 grid grid-cols-3 gap-3">
