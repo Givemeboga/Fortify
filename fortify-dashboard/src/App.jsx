@@ -54,9 +54,12 @@ function App() {
       prevStatus.current[s.id] = s.status
 
       // analysis finished with a critical verdict → brazier ("A signal fire is lit").
-      // Severity only exists once analysis completes, so this is the moment to check it.
+      // Fire on any pre-completed → completed transition (analyzing/pending/failed/null),
+      // not just the narrow "analyzing" window — a 3s poll can skip that window, and an
+      // HMR/refresh remount reseeds mid-flight. `prevA === undefined` is the first-mount
+      // baseline, so already-analyzed scans present on load never re-alert.
       const prevA = prevAnalysis.current[s.id]
-      if (prevA === "analyzing" && s.analysis_status === "completed"
+      if (prevA !== undefined && prevA !== "completed" && s.analysis_status === "completed"
           && s.analysis?.overall_risk?.level === "critical") {
         fresh.push({ id: `${s.id}-crit-${Date.now()}`, kind: "critical", detail: s.target_url })
       }
