@@ -35,6 +35,90 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── Material system — Carved Stone / Wrought Iron ────────────────────────────
+   Ported from the design handoff. Texture only; every colour is an existing
+   token or a neutral bevel shadow — nothing in the palette is recoloured.
+   2px radius everywhere (deliberately sharp). Live data stays plain. */
+:root {
+  --tex-stone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .51 0 0 0 0 .63 0 0 0 0 .82 .5 0 0 0 -.16'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --tex-iron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.3 .32' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .51 0 0 0 0 .63 0 0 0 0 .82 .6 0 0 0 -.24'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --rivets: radial-gradient(circle at 9px 9px,#8A97A8 0,#55606F 1.4px,#0A0E16 2.6px,transparent 3.2px),radial-gradient(circle at calc(100% - 9px) 9px,#8A97A8 0,#55606F 1.4px,#0A0E16 2.6px,transparent 3.2px),radial-gradient(circle at 9px calc(100% - 9px),#8A97A8 0,#55606F 1.4px,#0A0E16 2.6px,transparent 3.2px),radial-gradient(circle at calc(100% - 9px) calc(100% - 9px),#8A97A8 0,#55606F 1.4px,#0A0E16 2.6px,transparent 3.2px);
+}
+
+/* Carved Stone: mottled ashlar surface + chiselled double-edge borders. */
+.panel-stone {
+  background: var(--tex-stone) border-box, linear-gradient(var(--color-surface-2), var(--color-surface-2)) border-box;
+  border-radius: 2px;
+  box-shadow:
+    0 0 0 1px rgba(130, 160, 210, 0.20),
+    inset 1px 1px 0 rgba(0, 0, 0, 0.70),
+    inset -1px -1px 0 rgba(234, 241, 248, 0.06),
+    0 2px 0 1px rgba(0, 0, 0, 0.45);
+}
+
+/* Wrought Iron: hammered plate, riveted corners, forged double-rim (active/critical).
+   Static treatment — glow colour themable via --iron-glow. */
+.panel-iron {
+  --iron-glow: var(--color-accent);
+  position: relative;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background:
+    var(--rivets) padding-box,
+    linear-gradient(var(--color-surface-2), var(--color-surface-2)) padding-box,
+    var(--tex-iron) border-box,
+    linear-gradient(var(--color-bg), var(--color-bg)) border-box;
+  box-shadow:
+    0 0 0 1px rgba(130, 160, 210, 0.32),
+    inset 0 0 0 1px rgba(130, 160, 210, 0.16),
+    0 3px 0 rgba(0, 0, 0, 0.50),
+    0 0 16px color-mix(in srgb, var(--iron-glow) 22%, transparent);
+}
+.panel-iron--crit { --iron-glow: var(--color-crit); }
+
+/* Finding rim: forged double-rim + soft glow tinted to the finding's severity
+   (equal weight across levels — differentiated by colour + shield icon). */
+.finding-rim {
+  --rim: var(--color-border);
+  border-radius: 2px;
+  box-shadow:
+    inset 0 0 0 3px var(--color-surface),
+    inset 0 0 0 4px color-mix(in srgb, var(--rim) 60%, transparent),
+    0 0 16px color-mix(in srgb, var(--rim) 22%, transparent);
+}
+.rim-critical { --rim: var(--color-crit); }
+.rim-high     { --rim: var(--color-high); }
+.rim-medium   { --rim: var(--color-med); }
+.rim-low      { --rim: var(--color-low); }
+
+/* In-world state animations (loading gate, quill writing, brazier flare, pennant). */
+@keyframes kp-pulse   { 0%,100%{opacity:1} 50%{opacity:.35} }
+@keyframes kp-flick   { 0%,100%{transform:scale(1,1) rotate(-2deg)} 25%{transform:scale(.9,1.08) rotate(2deg)} 50%{transform:scale(1.06,.93) rotate(-1deg)} 75%{transform:scale(.95,1.05) rotate(1.5deg)} }
+@keyframes kp-glow    { 0%,100%{opacity:.75;transform:scale(1)} 50%{opacity:1;transform:scale(1.08)} }
+@keyframes kp-flutter { 0%,100%{transform:skewY(0) scaleX(1)} 30%{transform:skewY(-5deg) scaleX(.93)} 65%{transform:skewY(3deg) scaleX(.97)} }
+@keyframes kp-gate    { 0%,12%{transform:translateY(0)} 62%,86%{transform:translateY(-104px)} 100%{transform:translateY(0)} }
+@keyframes kp-write   { 0%{transform:translate(0,0)} 22%{transform:translate(200px,0)} 25%{transform:translate(0,22px)} 47%{transform:translate(180px,22px)} 50%{transform:translate(0,44px)} 72%{transform:translate(196px,44px)} 75%{transform:translate(0,66px)} 95%,100%{transform:translate(120px,66px)} }
+@keyframes kp-ink1    { 0%{transform:scaleX(0)} 22%,100%{transform:scaleX(1)} }
+@keyframes kp-ink2    { 0%,25%{transform:scaleX(0)} 47%,100%{transform:scaleX(1)} }
+@keyframes kp-ink3    { 0%,50%{transform:scaleX(0)} 72%,100%{transform:scaleX(1)} }
+@keyframes kp-ink4    { 0%,75%{transform:scaleX(0)} 95%,100%{transform:scaleX(1)} }
+
+.anim-glow    { animation: kp-glow 1.8s ease-in-out infinite; transform-origin: center; }
+.anim-flick   { animation: kp-flick 2.2s ease-in-out infinite; transform-origin: center bottom; }
+.anim-flutter { animation: kp-flutter 3s ease-in-out infinite; transform-origin: left center; }
+.anim-gate    { animation: kp-gate 3.4s ease-in-out infinite; }
+.anim-pulse   { animation: kp-pulse 1.6s ease-in-out infinite; }
+.anim-write   { animation: kp-write 3.6s ease-in-out infinite; }
+.anim-ink1    { animation: kp-ink1 3.6s ease-in-out infinite; transform-origin: left center; }
+.anim-ink2    { animation: kp-ink2 3.6s ease-in-out infinite; transform-origin: left center; }
+.anim-ink3    { animation: kp-ink3 3.6s ease-in-out infinite; transform-origin: left center; }
+.anim-ink4    { animation: kp-ink4 3.6s ease-in-out infinite; transform-origin: left center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-flick, .anim-glow, .anim-flutter, .anim-gate, .anim-write, .anim-pulse,
+  .anim-ink1, .anim-ink2, .anim-ink3, .anim-ink4 { animation: none !important; }
+}
+
 /* Print / PDF export — light, document-style theme.
    We redefine the design tokens inside @media print, so every Tailwind utility
    that references them (bg-surface, text-text, text-crit, …) turns light
@@ -65,6 +149,13 @@ body {
   body {
     background-color: #ffffff;
     color: var(--color-text);
+  }
+
+  /* Flatten the stone/iron material treatments for a clean printed report. */
+  .panel-stone, .panel-iron {
+    background: var(--color-surface) !important;
+    box-shadow: none !important;
+    border: 1px solid var(--color-border) !important;
   }
 
   @page {

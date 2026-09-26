@@ -1,14 +1,26 @@
 import { useState } from 'react'
+import { Icon } from './icons/Icons'
 
-const STATUS_COLORS = {
-  completed: "text-low",     // green
-  running:   "text-accent",  // blue
-  pending:   "text-muted",   // grey
-  failed:    "text-crit",    // red
+// Status = low-weight dot + label (a scan's lifecycle, not its risk).
+// Live/in-progress rows stay plain — operators read status fast (per handoff).
+const STATUS_DOT = {
+  completed: "bg-low",
+  running:   "bg-accent",
+  pending:   "bg-accent",
+  failed:    "bg-crit",
 }
-function statusColor(status) {
-  return STATUS_COLORS[status] || "text-muted"
+function statusDot(status) {
+  return STATUS_DOT[status] || "bg-muted"
 }
+
+// Severity = the louder signal (a bordered, tinted badge + shield icon).
+const SEVERITY_BADGE = {
+  critical: "text-crit border-crit/40 bg-crit/10",
+  high:     "text-high border-high/40 bg-high/10",
+  medium:   "text-med border-med/40 bg-med/10",
+  low:      "text-low border-low/40 bg-low/10",
+}
+const SEV_ICON = { critical: "i-sev-crit", high: "i-sev-high", medium: "i-sev-med", low: "i-sev-low" }
 
 function formatTime(iso) {
   return new Date(iso).toLocaleString()
@@ -31,8 +43,9 @@ function SiegeLog({ scans, onDelete, onSelect }) {
 
       {/* empty state */}
       {scans.length === 0 ? (
-        <div className="font-mono text-sm text-faint py-6">
-          The watch is quiet — launch your first patrol.
+        <div className="font-mono py-6">
+          <div className="text-sm text-text">The watch is quiet.</div>
+          <div className="text-xs text-muted mt-1">No scans yet — enter a URL above to run your first patrol.</div>
         </div>
       ) : (
         <table className="w-full text-sm">
@@ -41,12 +54,15 @@ function SiegeLog({ scans, onDelete, onSelect }) {
               <th className="py-2 pr-6 font-normal">Target</th>
               <th className="py-2 pr-6 font-normal">Mode</th>
               <th className="py-2 pr-6 font-normal">Status</th>
+              <th className="py-2 pr-6 font-normal">Severity</th>
               <th className="py-2 pr-6 font-normal">Started</th>
               <th className="py-2 font-normal"></th>
             </tr>
           </thead>
           <tbody>
-            {pageScans.map((scan) => (
+            {pageScans.map((scan) => {
+              const level = scan.analysis?.overall_risk?.level
+              return (
               <tr
                 key={scan.id}
                 onClick={() => onSelect(scan.id)}
@@ -54,7 +70,22 @@ function SiegeLog({ scans, onDelete, onSelect }) {
               >
                 <td className="py-2 pr-6 font-mono text-text whitespace-nowrap">{scan.target_url}</td>
                 <td className="py-2 pr-6 font-mono text-muted">{scan.scan_type}</td>
-                <td className={`py-2 pr-6 font-mono ${statusColor(scan.status)}`}>{scan.status}</td>
+                <td className="py-2 pr-6">
+                  <span className="flex items-center gap-2 font-mono text-xs text-muted">
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusDot(scan.status)} ${(scan.status === "pending" || scan.status === "running") ? "anim-pulse" : ""}`} />
+                    {scan.status}
+                  </span>
+                </td>
+                <td className="py-2 pr-6">
+                  {level ? (
+                    <span className={`inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase px-2 py-0.5 rounded-[2px] border ${SEVERITY_BADGE[level] || "text-muted border-border"}`}>
+                      <Icon id={SEV_ICON[level]} size={12} />
+                      {level}
+                    </span>
+                  ) : (
+                    <span className="font-mono text-xs text-faint">—</span>
+                  )}
+                </td>
                 <td className="py-2 pr-6 font-mono text-muted whitespace-nowrap">{formatTime(scan.created_at)}</td>
                 <td className="py-2">
                   <button
@@ -66,7 +97,8 @@ function SiegeLog({ scans, onDelete, onSelect }) {
                   </button>
                 </td>
               </tr>
-            ))}
+              )
+            })}
           </tbody>
         </table>
       )}

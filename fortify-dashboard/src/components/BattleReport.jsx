@@ -1,4 +1,10 @@
 import { useState, useEffect } from 'react'
+import Panel from './Panel'
+import SeverityStrip from './SeverityStrip'
+import { Icon } from './icons/Icons'
+import { GateLoader, QuillWriter } from './StateGraphics'
+
+const SEV_ICON = { critical: "i-sev-crit", high: "i-sev-high", medium: "i-sev-med", low: "i-sev-low" }
 
 const LEVEL_STYLES = {
   critical: { chip: "bg-crit/15 text-crit border-crit/40", bar: "bg-crit" },
@@ -24,15 +30,6 @@ function useTypewriter(text, speed = 10) {
     return () => clearInterval(id)
   }, [text, speed])
   return shown
-}
-
-function Panel({ title, children }) {
-  return (
-    <div className="border border-border rounded p-4 bg-surface break-inside-avoid">
-      <div className="font-mono text-[10px] text-faint uppercase tracking-widest mb-3">{title}</div>
-      {children}
-    </div>
-  )
 }
 
 function BattleReport({ scanId, onBack }) {
@@ -69,7 +66,15 @@ function BattleReport({ scanId, onBack }) {
     setScan((prev) => ({ ...prev, analysis_status: "analyzing" }))
   }
 
-  if (!scan) return <div className="font-mono text-muted">Loading…</div>
+  if (!scan) return (
+    <div className="flex items-center gap-4 font-mono py-6">
+      <GateLoader />
+      <div>
+        <div className="text-sm text-text">The gate grinds open</div>
+        <div className="text-xs text-muted mt-1">Unrolling the dispatch…</div>
+      </div>
+    </div>
+  )
 
   const results = scan.results || {}
   const analysis = scan.analysis
@@ -98,17 +103,19 @@ function BattleReport({ scanId, onBack }) {
         {/* LEFT — AI analysis */}
         <div className="col-span-2">
           {status === "analyzing" ? (
-            <div className="flex items-center gap-3 border border-border rounded p-4 bg-surface">
-              <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-              <span className="font-mono text-sm text-muted animate-pulse">
-                Consulting the war council… the model is thinking.
-              </span>
-            </div>
+            <Panel variant="iron" className="flex items-center gap-4">
+              <QuillWriter />
+              <div>
+                <div className="font-mono text-sm text-text">Counsel is drafting the report</div>
+                <div className="font-mono text-xs text-muted animate-pulse">Weighing the findings…</div>
+              </div>
+            </Panel>
           ) : status === "failed" ? (
             <div className="border border-crit/40 rounded p-4 bg-surface">
-              <div className="font-mono text-sm text-crit mb-2">
-                {analysis?.error || "Analysis failed — the model errored or was unreachable."}
-                </div>
+              <div className="font-mono text-sm text-crit">Counsel could not convene</div>
+              <div className="font-mono text-xs text-muted mt-1 mb-3">
+                {analysis?.error || "The model errored or was unreachable."}
+              </div>
               <button
                 onClick={handleAnalyze}
                 className="bg-accent text-bg font-semibold px-4 py-1.5 rounded hover:brightness-110 print:hidden"
@@ -117,7 +124,10 @@ function BattleReport({ scanId, onBack }) {
               </button>
             </div>
           ) : analysis ? (
-            <AnalysisPanel analysis={analysis} />
+            <div className="space-y-4">
+              <SeverityStrip findings={analysis.findings} />
+              <AnalysisPanel analysis={analysis} />
+            </div>
           ) : (
             <button
               onClick={handleAnalyze}
@@ -209,7 +219,12 @@ function AnalysisPanel({ analysis }) {
   const typedSummary = useTypewriter(analysis.summary)
 
   return (
-    <div className="border border-border rounded-lg bg-surface overflow-hidden">
+    <div className="relative panel-stone overflow-hidden">
+      {/* illuminated corner flourishes (AI notes panel only) */}
+      <Icon id="o-fleuron" viewBox="0 0 28 28" size={18} className="absolute top-2 left-2 text-accent/40 pointer-events-none print:hidden" />
+      <Icon id="o-fleuron" viewBox="0 0 28 28" size={18} className="absolute top-2 right-2 text-accent/40 pointer-events-none -scale-x-100 print:hidden" />
+      <Icon id="o-fleuron" viewBox="0 0 28 28" size={18} className="absolute bottom-2 left-2 text-accent/40 pointer-events-none -scale-y-100 print:hidden" />
+      <Icon id="o-fleuron" viewBox="0 0 28 28" size={18} className="absolute bottom-2 right-2 text-accent/40 pointer-events-none rotate-180 print:hidden" />
       {/* header */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-surface-2">
         <span className="font-mono text-[10px] text-faint uppercase tracking-widest">Model Notes</span>
@@ -227,25 +242,26 @@ function AnalysisPanel({ analysis }) {
         </p>
 
         <div className="mt-5 space-y-2.5">
-          {analysis.findings?.map((f, i) => {
+          {[...(analysis.findings || [])]
+            .sort((a, b) => (b.severity?.score || 0) - (a.severity?.score || 0))
+            .map((f, i) => {
             const fs = levelStyle(f.severity?.level)
+            const level = f.severity?.level
             return (
               <div
                 key={i}
-                className="flex gap-3 rounded border border-border bg-bg/40 p-3 break-inside-avoid"
+                className={`finding-rim rim-${level} bg-surface p-3.5 break-inside-avoid`}
                 style={{ animation: "rise 0.4s ease both", animationDelay: `${300 + i * 140}ms` }}
               >
-                <div className={`w-0.5 rounded ${fs.bar}`} />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`font-mono text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border ${fs.chip}`}>
-                      {f.severity?.level} · {f.severity?.score}
-                    </span>
-                    <span className="text-sm text-text font-medium">{f.vulnerability}</span>
-                  </div>
-                  <div className="text-xs text-muted mt-1.5 leading-relaxed">{f.explanation}</div>
-                  <div className="text-xs text-low mt-1.5 leading-relaxed">→ {f.remediation}</div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[2px] border ${fs.chip}`}>
+                    <Icon id={SEV_ICON[level] || "i-shield"} size={12} />
+                    {f.severity?.level} · {f.severity?.score}
+                  </span>
+                  <span className="text-sm text-text font-medium">{f.vulnerability}</span>
                 </div>
+                <div className="text-xs text-muted mt-1.5 leading-relaxed">{f.explanation}</div>
+                <div className="text-xs text-low mt-1.5 leading-relaxed">→ {f.remediation}</div>
               </div>
             )
           })}
