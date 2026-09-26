@@ -124,7 +124,7 @@ export default function Overview({ scans, onSelect, onViewAll }) {
           View all →
         </button>
       </div>
-      <SiegeLog scans={scans} onSelect={onSelect} heading={null} limit={5} />
+      <SiegeLog scans={scans} onSelect={onSelect} heading={null} limit={3} />
     </>
   )
 }
