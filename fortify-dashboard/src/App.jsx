@@ -66,8 +66,12 @@ function App() {
       prevAnalysis.current[s.id] = s.analysis_status
     }
     if (fresh.length) {
-      // Toasts persist until dismissed (per handoff) — never auto-hide.
       setToasts((t) => [...t, ...fresh])
+      // Auto-dismiss after 8s so an alert doesn't linger into the next scan;
+      // the manual ✕ still works, and dismissing an already-gone id is a no-op.
+      for (const f of fresh) {
+        setTimeout(() => dismissToast(f.id), 8000)
+      }
     }
     setScans(data)
   }
