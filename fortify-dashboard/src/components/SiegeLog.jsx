@@ -26,20 +26,25 @@ function formatTime(iso) {
   return new Date(iso).toLocaleString()
 }
 
-function SiegeLog({ scans, onDelete, onSelect }) {
+// `heading={null}` hides the built-in header (when a parent supplies its own).
+// `limit` caps the rows and drops pagination — for compact previews.
+function SiegeLog({ scans, onDelete, onSelect, heading = "Siege Log", limit = null }) {
   const [page, setPage] = useState(0)          // local UI state
+  const paginated = limit == null
   const pageSize = 10
   const totalPages = Math.max(1, Math.ceil(scans.length / pageSize))
   const start = page * pageSize
-  const pageScans = scans.slice(start, start + pageSize)   // just this page's rows
+  const pageScans = paginated ? scans.slice(start, start + pageSize) : scans.slice(0, limit)
 
   return (
     <div className="mt-8">
       {/* header */}
-      <div className="flex items-baseline gap-3 mb-3">
-        <h2 className="font-display text-xl">Siege Log</h2>
-        <span className="font-mono text-xs text-muted">{scans.length} scans · newest first</span>
-      </div>
+      {heading && (
+        <div className="flex items-baseline gap-3 mb-3">
+          <h2 className="font-display text-xl">{heading}</h2>
+          <span className="font-mono text-xs text-muted">{scans.length} scans · newest first</span>
+        </div>
+      )}
 
       {/* empty state */}
       {scans.length === 0 ? (
@@ -88,13 +93,15 @@ function SiegeLog({ scans, onDelete, onSelect }) {
                 </td>
                 <td className="py-2 pr-6 font-mono text-muted whitespace-nowrap">{formatTime(scan.created_at)}</td>
                 <td className="py-2">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onDelete(scan.id) }}
-                    className="text-faint hover:text-crit font-mono"
-                    title="Delete scan"
-                  >
-                    ✕
-                  </button>
+                  {onDelete && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDelete(scan.id) }}
+                      className="text-faint hover:text-crit font-mono"
+                      title="Delete scan"
+                    >
+                      ✕
+                    </button>
+                  )}
                 </td>
               </tr>
               )
@@ -103,8 +110,8 @@ function SiegeLog({ scans, onDelete, onSelect }) {
         </table>
       )}
 
-      {/* pagination controls — only when more than one page */}
-      {totalPages > 1 && (
+      {/* pagination controls — only when more than one page (never in limited previews) */}
+      {paginated && totalPages > 1 && (
         <div className="flex items-center gap-4 mt-4 font-mono text-xs text-muted">
           <button
             onClick={() => setPage((p) => Math.max(0, p - 1))}
