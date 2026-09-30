@@ -82,23 +82,22 @@ function reportDays(scans, dayCount = 7) {
     d.setDate(today.getDate() - i)
     const key = d.toISOString().slice(0, 10)
     const rec = byDay[key] || { total: 0, providers: {} }
-    // the provider that produced most of that day's reports → the candle's flame colour
-    const provider = Object.entries(rec.providers).sort((a, b) => b[1] - a[1])[0]?.[0] || null
-    out.push({ key, total: rec.total, label: `${key.slice(8, 10)}/${key.slice(5, 7)}`, provider })
+    // per-provider counts drive one candle each (side by side) within the day
+    out.push({ key, total: rec.total, providers: rec.providers, label: `${key.slice(8, 10)}/${key.slice(5, 7)}` })
   }
   return out
 }
 
-// Candle geometry for one day (34×120 viewBox, holder at y118) — matches the
-// handoff support script: rounded-top body (+ a drip on lit days), wick, flame.
+// Candle geometry for one candle (22×120 viewBox, centred at x11, holder at
+// y118) — narrow enough that two providers can stand side by side in a day.
 function candle(v, max) {
   const lit = v > 0
   const h = lit ? 8 + (80 * v) / max : 8
   const t = 118 - h
   return {
-    body: `M11 118V${t + 3}Q11 ${t} 17 ${t}Q23 ${t} 23 ${t + 3}V118Z${lit ? `M20 ${t + 1}V${t + 9}` : ""}`,
-    wick: lit ? `M17 ${t}V${t - 5}` : "",
-    flame: lit ? `M17 ${t - 5}C12.5 ${t - 9} 14 ${t - 17} 17 ${t - 23}C20 ${t - 17} 21.5 ${t - 9} 17 ${t - 5}Z` : "",
+    body: `M6 118V${t + 3}Q6 ${t} 11 ${t}Q16 ${t} 16 ${t + 3}V118Z${lit ? `M14 ${t + 1}V${t + 9}` : ""}`,
+    wick: lit ? `M11 ${t}V${t - 5}` : "",
+    flame: lit ? `M11 ${t - 5}C7 ${t - 9} 8.5 ${t - 17} 11 ${t - 23}C13.5 ${t - 17} 15 ${t - 9} 11 ${t - 5}Z` : "",
     gy: t - 13,
     edge: lit ? "#8A97A8" : "#55606F",
     fo: lit ? 1 : 0,
@@ -122,7 +121,7 @@ export default function Overview({ scans, onSelect, onViewAll }) {
   const tm = models[0] || null
   const totalReports = models.reduce((sum, m) => sum + m.count, 0)
   const days = reportDays(scans)
-  const maxDay = Math.max(1, ...days.map((d) => d.total))
+  const maxDay = Math.max(1, ...days.flatMap((d) => Object.values(d.providers)))
   const recent = scans.slice(0, 5)
 
   const facadeStats = [
@@ -198,29 +197,37 @@ export default function Overview({ scans, onSelect, onViewAll }) {
                 <span>{maxDay}</span><span>{Math.round(maxDay / 2)}</span><span>0</span>
               </div>
               <div className="flex-1 flex flex-col">
-                <div style={{ height: 120, display: "flex", alignItems: "flex-end", justifyContent: "space-between", padding: "0 8px" }}>
+                <div style={{ height: 120, display: "flex", alignItems: "flex-end", padding: "0 8px" }}>
                   {days.map((d) => {
-                    const b = candle(d.total, maxDay)
-                    const c = providerColor(d.provider)
-                    const glowId = d.provider === "gemini" ? "cd-glow-amber" : "cd-glow"
+                    const present = ["ollama", "gemini"].filter((p) => (d.providers[p] || 0) > 0)
+                    const list = present.length ? present : ["empty"]
                     return (
-                      <svg key={d.key} width="34" height="120" viewBox="0 0 34 120" style={{ overflow: "visible" }}>
-                        <ellipse cx="17" cy={b.gy} rx="15" ry="20" fill={`url(#${glowId})`} opacity={b.fo} />
-                        <g filter="url(#ink)" strokeLinecap="round" strokeLinejoin="round">
-                          <path d={b.body} fill="#131A28" stroke={b.edge} strokeWidth="1.6" />
-                          {b.wick && <path d={b.wick} fill="none" stroke="#8A97A8" strokeWidth="1.2" />}
-                          {b.flame && <path d={b.flame} fill={c} stroke="#EAF1F8" strokeWidth=".8" opacity={b.fo} />}
-                        </g>
-                        <path d="M8 119H26" stroke="#55606F" strokeWidth="2" strokeLinecap="round" />
-                      </svg>
+                      <div key={d.key} style={{ flex: 1, display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 3 }}>
+                        {list.map((p) => {
+                          const b = candle(p === "empty" ? 0 : d.providers[p], maxDay)
+                          const c = p === "gemini" ? "#F97316" : "#2FA4FF"
+                          const glowId = p === "gemini" ? "cd-glow-amber" : "cd-glow"
+                          return (
+                            <svg key={p} width="22" height="120" viewBox="0 0 22 120" style={{ overflow: "visible" }}>
+                              <ellipse cx="11" cy={b.gy} rx="12" ry="18" fill={`url(#${glowId})`} opacity={b.fo} />
+                              <g filter="url(#ink)" strokeLinecap="round" strokeLinejoin="round">
+                                <path d={b.body} fill="#131A28" stroke={b.edge} strokeWidth="1.6" />
+                                {b.wick && <path d={b.wick} fill="none" stroke="#8A97A8" strokeWidth="1.2" />}
+                                {b.flame && <path d={b.flame} fill={c} stroke="#EAF1F8" strokeWidth=".8" opacity={b.fo} />}
+                              </g>
+                              <path d="M4 119H18" stroke="#55606F" strokeWidth="2" strokeLinecap="round" />
+                            </svg>
+                          )
+                        })}
+                      </div>
                     )
                   })}
                 </div>
                 {/* stone ledge */}
                 <div style={{ height: 9, backgroundColor: "#131A28", backgroundImage: "var(--tex-stone)", borderTop: "1px solid rgba(234,241,248,.1)", boxShadow: "0 2px 0 rgba(0,0,0,.55), inset 0 -1px 0 rgba(0,0,0,.5)" }} />
-                <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 8px 0" }}>
+                <div style={{ display: "flex", padding: "6px 8px 0" }}>
                   {days.map((d) => (
-                    <span key={d.key} className="font-mono" style={{ width: 34, textAlign: "center", fontSize: 10, color: candle(d.total, maxDay).lc }}>{d.label}</span>
+                    <span key={d.key} className="font-mono" style={{ flex: 1, textAlign: "center", fontSize: 10, color: d.total > 0 ? "#EAF1F8" : "#55606F" }}>{d.label}</span>
                   ))}
                 </div>
               </div>
