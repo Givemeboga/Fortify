@@ -1,5 +1,12 @@
 import { useState } from 'react'
 
+// Selected-card accent per provider: local/ollama = azure, cloud/gemini = orange
+// (the "data leaves the machine" option reads as the louder choice).
+const TONE = {
+  ollama: { solid: "#2FA4FF", ring: "rgba(47,164,255,.22)", glow: "rgba(47,164,255,.6)" },
+  gemini: { solid: "#F97316", ring: "rgba(249,115,22,.22)", glow: "rgba(249,115,22,.6)" },
+}
+
 // Counsel — AI provider settings (handoff 03). Two provider cards act as a
 // radio group; Gemini reveals a key field. Save persists to localStorage.
 function Settings({ onProviderSaved }) {
@@ -17,6 +24,7 @@ function Settings({ onProviderSaved }) {
 
   const ProviderCard = ({ value, title, desc }) => {
     const on = provider === value
+    const t = TONE[value] || TONE.ollama
     return (
       <div
         onClick={() => setProvider(value)}
@@ -24,14 +32,14 @@ function Settings({ onProviderSaved }) {
         style={{
           width: 380, padding: "20px 22px", gap: 10,
           boxShadow: on
-            ? "0 0 0 1px #2FA4FF, 0 0 20px rgba(47,164,255,.22), inset 1px 1px 0 rgba(234,241,248,.09), inset -1px -1px 0 rgba(0,0,0,.75)"
+            ? `0 0 0 1px ${t.solid}, 0 0 20px ${t.ring}, inset 1px 1px 0 rgba(234,241,248,.09), inset -1px -1px 0 rgba(0,0,0,.75)`
             : undefined,
         }}
       >
         {on && <div style={{ position: "absolute", inset: 0, background: "var(--rivets)", pointerEvents: "none" }} />}
         <div className="flex items-center font-mono text-text" style={{ gap: 10, fontSize: 14, letterSpacing: ".12em" }}>
           {on ? (
-            <span style={{ width: 14, height: 14, borderRadius: "50%", background: "#2FA4FF", boxShadow: "0 0 8px rgba(47,164,255,.6)" }} />
+            <span style={{ width: 14, height: 14, borderRadius: "50%", background: t.solid, boxShadow: `0 0 8px ${t.glow}` }} />
           ) : (
             <span style={{ width: 10, height: 10, borderRadius: "50%", border: "2px solid #8A97A8" }} />
           )}

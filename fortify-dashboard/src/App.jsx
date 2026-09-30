@@ -105,7 +105,7 @@ useEffect(() => {
         {view === "settings" ? (
           <Settings onProviderSaved={setProvider} />
         ) : view === "battle-report" ? (
-          <BattleReport scanId={selectedScanId} onBack={() => navigate("#/")} />
+          <BattleReport scanId={selectedScanId} onBack={() => navigate("#/scans")} />
         ) : view === "log" ? (
           <>
             <div className="flex flex-col gap-2">

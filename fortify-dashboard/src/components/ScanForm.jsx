@@ -19,7 +19,7 @@ function ScanForm({ onScanStarted }) {
     onScanStarted()
   }
 
-  const Mode = ({ value, icon, label }) => {
+  const Mode = ({ value, icon, label, tone }) => {
     const on = scanType === value
     return (
       <button
@@ -28,7 +28,7 @@ function ScanForm({ onScanStarted }) {
         style={{
           height: 38, padding: "0 18px", gap: 10, borderRadius: 2, fontSize: 12, letterSpacing: ".14em",
           ...(on
-            ? { backgroundColor: "#2FA4FF", color: "#0A0E16", border: "1px solid #2FA4FF", boxShadow: "inset 0 1px 0 rgba(234,241,248,.45)" }
+            ? { backgroundColor: tone, color: "#0A0E16", border: `1px solid ${tone}`, boxShadow: "inset 0 1px 0 rgba(234,241,248,.45)" }
             : { backgroundColor: "#131A28", backgroundImage: "var(--tex-stone)", color: "#EAF1F8", border: "1px solid rgba(130,160,210,.22)", boxShadow: "inset 0 1px 0 rgba(234,241,248,.06), 0 2px 0 rgba(0,0,0,.45)" }),
         }}
       >
@@ -65,8 +65,8 @@ function ScanForm({ onScanStarted }) {
 
       {/* passive / active toggle */}
       <div className="flex" style={{ gap: 10 }}>
-        <Mode value="passive" icon="i-lantern" label="PASSIVE · THE WATCH" />
-        <Mode value="active" icon="i-swords" label="ACTIVE · THE SIEGE" />
+        <Mode value="passive" icon="i-lantern" label="PASSIVE · THE WATCH" tone="#2FA4FF" />
+        <Mode value="active" icon="i-swords" label="ACTIVE · THE SIEGE" tone="#F97316" />
       </div>
 
       {/* consent gate — only when active is selected */}
