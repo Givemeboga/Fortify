@@ -1,3 +1,5 @@
+import { useRef, useState, useLayoutEffect } from 'react'
+
 /**
  * Stained-glass stat façade for Command (handoff 01). A fixed 1128×400 gothic
  * triptych: three pointed-arch windows with quarry glass, tracery and rose
@@ -86,18 +88,35 @@ function StatText({ left, width, n, label }) {
 }
 
 export default function StainedGlassFacade({ stats }) {
+  // The façade is authored in a fixed 1128×400 space (SVG + HTML overlays). To
+  // stay responsive we scale that whole block down to fit narrower containers,
+  // never upscaling past the designed size.
+  const wrapRef = useRef(null)
+  const [scale, setScale] = useState(1)
+  useLayoutEffect(() => {
+    const el = wrapRef.current
+    if (!el) return
+    const update = () => setScale(Math.min(1, el.clientWidth / 1128))
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   return (
-    <div style={{ position: "relative", width: 1128, height: 400, flex: "none", alignSelf: "center", marginTop: -12 }}>
-      <div
-        style={{
-          position: "absolute", inset: 0, backgroundImage: "var(--tex-stone)",
-          opacity: 0.35, clipPath: `path('${ARCHES}')`,
-        }}
-      />
-      <div dangerouslySetInnerHTML={{ __html: SVG }} />
-      {stats.map((s, i) => (
-        <StatText key={i} left={PANES[i].left} width={PANES[i].width} n={s.n} label={s.label} />
-      ))}
+    <div ref={wrapRef} style={{ width: "100%", height: 400 * scale, marginTop: -12, overflow: "hidden" }}>
+      <div style={{ position: "relative", width: 1128, height: 400, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+        <div
+          style={{
+            position: "absolute", inset: 0, backgroundImage: "var(--tex-stone)",
+            opacity: 0.35, clipPath: `path('${ARCHES}')`,
+          }}
+        />
+        <div dangerouslySetInnerHTML={{ __html: SVG }} />
+        {stats.map((s, i) => (
+          <StatText key={i} left={PANES[i].left} width={PANES[i].width} n={s.n} label={s.label} />
+        ))}
+      </div>
     </div>
   )
 }
