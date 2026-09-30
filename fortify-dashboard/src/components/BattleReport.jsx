@@ -84,7 +84,7 @@ function BattleReport({ scanId, onBack }) {
     <div className="max-w-6xl">
       {/* header — nav row hidden when printing the PDF */}
       <div className="flex items-center justify-between mb-4 print:hidden">
-        <button onClick={onBack} className="font-mono text-xs text-muted hover:text-text">← Back to Command</button>
+        <button onClick={onBack} className="font-mono text-xs text-muted hover:text-text">← Back to Siege Log</button>
         <button onClick={() => window.print()} className="font-mono text-xs text-accent hover:brightness-110">Export PDF ↓</button>
       </div>
       <div className="flex items-baseline gap-3">

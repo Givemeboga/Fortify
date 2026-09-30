@@ -95,21 +95,23 @@ useEffect(() => {
     <>
     <IconSprite />
     <Toast toasts={toasts} onDismiss={dismissToast} />
-    <div className="flex min-h-screen bg-bg text-text">
+    <div className="relative flex min-h-screen page-stone text-text">
       <Sidebar
         view={view}
         onNavigate={(v) => navigate(v === "settings" ? "#/settings" : v === "log" ? "#/scans" : "#/")}
         provider={provider}
       />
-      <main className="flex-1 p-8">
+      <main className="flex-1 min-w-0 flex flex-col" style={{ padding: "36px 40px 48px", gap: 28 }}>
         {view === "settings" ? (
           <Settings onProviderSaved={setProvider} />
         ) : view === "battle-report" ? (
-          <BattleReport scanId={selectedScanId} onBack={() => navigate("#/")} />
+          <BattleReport scanId={selectedScanId} onBack={() => navigate("#/scans")} />
         ) : view === "log" ? (
           <>
-            <h1 className="font-display text-3xl">Siege Log</h1>
-            <span className="font-mono text-xs text-muted tracking-widest uppercase">// muster &amp; dispatch</span>
+            <div className="flex flex-col gap-2">
+              <h1 className="font-display font-semibold leading-none text-text" style={{ fontSize: 44 }}>Siege Log</h1>
+              <span className="font-mono text-muted" style={{ fontSize: 12, letterSpacing: ".16em" }}>// MUSTER &amp; DISPATCH</span>
+            </div>
             <ScanForm onScanStarted={loadScans} />
             <SiegeLog scans={scans} onDelete={handleDelete} onSelect={(id) => navigate(`#/scans/${id}`)} heading={null} />
           </>
@@ -121,6 +123,8 @@ useEffect(() => {
           />
         )}
       </main>
+      {/* inset vignette overlay (handoff global shell) */}
+      <div className="pointer-events-none absolute inset-0 print:hidden" style={{ boxShadow: "inset 0 0 200px rgba(0,0,0,.7)" }} />
     </div>
     </>
   )

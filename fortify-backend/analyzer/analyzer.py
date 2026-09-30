@@ -1,5 +1,5 @@
 import json
-from analyzer.llm import get_llm_response
+from analyzer.llm import get_llm_response, resolve_provider_model
 
 def build_prompt(findings: list[dict]) -> str:
     return f"""You are a senior application security analyst reviewing the output of an automated web scan.
@@ -51,14 +51,20 @@ SECRET_PATHS = {"/.env", "/.git/", "/backup", "/db_backup.sql"}
 def analyze(results: dict, provider: str | None = None, api_key: str | None = None) -> dict:
     findings = extract_findings(results)
 
-    # No confirmed findings → don't even call the LLM (nothing to invent)
+    # No confirmed findings → don't even call the LLM (nothing to invent).
+    # Still stamp the selected provider/model so every completed analysis carries
+    # one — the stat reads as "provider selected for this analysis", not strictly
+    # "model that wrote prose".
     if not findings:
+        prov, model = resolve_provider_model(provider)
         return {
             "overall_risk": {"score": 0, "level": "low"},
             "summary": "No confirmed security findings were detected.",
             "findings": [],
             "priority_order": [],
             "disclaimer": DISCLAIMER,
+            "provider": prov,
+            "model": model,
         }
 
     scores = [score_finding(f) for f in findings]   # deterministic, in finding order
@@ -77,6 +83,7 @@ def analyze(results: dict, provider: str | None = None, api_key: str | None = No
     overall = max(scores)   # worst finding, not an average
     assessment["overall_risk"] = {"score": overall, "level": score_to_level(overall)}
     assessment["disclaimer"] = DISCLAIMER
+    assessment["provider"], assessment["model"] = resolve_provider_model(provider)
     return assessment
 
 def score_to_level(score: int) -> str:

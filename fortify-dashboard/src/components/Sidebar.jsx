@@ -1,73 +1,120 @@
 /* global __APP_VERSION__ */  // injected from package.json by Vite (vite.config.js)
-import { Watchtower, Scroll, Swords } from './icons/Icons'
+import { useState } from 'react'
+import { Icon } from './icons/Icons'
 
+// Keep App theme — recessed nav, stone-textured aside, lantern footer.
 const OPERATIONS = [
-  { label: "Command", view: "command", badge: null, icon: Watchtower },
-  { label: "Siege Log", view: "log", badge: null, icon: Swords },
+  { label: "Command", view: "command", icon: "i-keep" },
+  { label: "Siege Log", view: "log", icon: "i-swords" },
 ]
 const COUNSEL = [
-  { label: "Settings", view: "settings", badge: null, icon: Scroll },
+  { label: "Counsel", view: "settings", icon: "i-tome" },
 ]
 
 function Sidebar({ view, onNavigate, provider }) {
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem("fortify_sidebar_collapsed") === "1" } catch { return false }
+  })
+
+  function toggle() {
+    setCollapsed((c) => {
+      const next = !c
+      try { localStorage.setItem("fortify_sidebar_collapsed", next ? "1" : "0") } catch { /* ignore */ }
+      return next
+    })
+  }
+
   const renderItem = (item) => {
-    const Icon = item.icon
+    const active = view === item.view
     return (
       <div
         key={item.label}
         onClick={() => onNavigate(item.view)}
-        className={`flex justify-between items-center px-2 py-1.5 rounded cursor-pointer ${
-          view === item.view ? "bg-surface-2 text-text" : "text-muted hover:text-text hover:bg-surface-2"
-        }`}
+        title={collapsed ? item.label : undefined}
+        className="flex items-center h-10 rounded-[2px] cursor-pointer transition-colors"
+        style={{
+          gap: collapsed ? 0 : 12,
+          padding: collapsed ? 0 : "0 12px",
+          justifyContent: collapsed ? "center" : "flex-start",
+          ...(active
+            ? { backgroundColor: "#0A0E16", boxShadow: "inset 0 2px 4px rgba(0,0,0,.6), inset 0 0 0 1px rgba(130,160,210,.14)" }
+            : {}),
+        }}
       >
-        <span className="flex items-center gap-2.5 text-sm">
-          {Icon && <Icon size={16} className="shrink-0" />}
-          {item.label}
-        </span>
-        {item.badge && (
-          <span className="font-mono text-[10px] text-accent bg-accent/20 px-2 py-0.5 rounded-full">{item.badge}</span>
+        <Icon id={item.icon} size={18} className={active ? "text-accent" : "text-muted"} />
+        {!collapsed && (
+          <span className="font-sans text-sm font-medium" style={{ color: active ? "#EAF1F8" : "#8A97A8" }}>{item.label}</span>
         )}
       </div>
     )
   }
 
   return (
-    <aside className="w-60 shrink-0 border-r border-border flex flex-col print:hidden">
-      {/* wordmark */}
-      <div className="p-4 border-b border-border flex items-center gap-3">
-        <img src="/logo.png" alt="Fortify" className="w-10 h-10 rounded-full shrink-0" />
-        <div>
-          <div className="font-display text-2xl text-text leading-none">Fortify</div>
-          <div className="font-mono text-[10px] text-accent tracking-widest">THE KEEP · v{__APP_VERSION__}</div>
-        </div>
+    <aside
+      className="shrink-0 flex flex-col border-r border-border print:hidden"
+      style={{
+        width: collapsed ? 64 : 232,
+        backgroundColor: "#0F1420",
+        backgroundImage: "var(--tex-stone)",
+        boxShadow: "inset -3px 0 0 #0A0E16, inset -4px 0 0 rgba(130,160,210,.08)",
+        transition: "width .18s ease",
+      }}
+    >
+      {/* brand block */}
+      <div
+        className="flex items-center border-b border-border"
+        style={{ padding: collapsed ? "18px 0" : "18px 16px", gap: 12, justifyContent: collapsed ? "center" : "flex-start", backgroundColor: "rgba(19,26,40,.6)" }}
+      >
+        <img src="/logo.png" alt="Fortify" className="rounded-full shrink-0" style={{ width: 44, height: 44 }} />
+        {!collapsed && (
+          <div>
+            <div className="font-display text-text" style={{ fontSize: 28, lineHeight: 1 }}>Fortify</div>
+            <div className="font-mono text-accent whitespace-nowrap" style={{ fontSize: 10, letterSpacing: ".12em", marginTop: 3 }}>
+              THE KEEP · v{__APP_VERSION__}
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* collapse toggle */}
+      <button
+        onClick={toggle}
+        title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        className="flex items-center border-b border-border text-muted hover:text-text"
+        style={{ height: 34, padding: collapsed ? 0 : "0 14px", justifyContent: collapsed ? "center" : "flex-end" }}
+      >
+        <span style={{ transform: collapsed ? "none" : "scaleX(-1)", lineHeight: 0 }}><Icon id="i-arrow-r" size={14} /></span>
+      </button>
+
       {/* nav */}
-      <nav className="flex-1 p-3 space-y-4">
-        <div>
-          <div className="font-mono text-[10px] text-faint tracking-widest uppercase px-2 mb-2">Operations</div>
+      <nav className="flex-1 flex flex-col" style={{ padding: collapsed ? "18px 8px" : "18px 10px", gap: 20 }}>
+        <div className="flex flex-col gap-1">
+          {!collapsed && <div className="font-mono text-muted" style={{ padding: "0 12px 6px", letterSpacing: ".16em", fontSize: 10 }}>OPERATIONS</div>}
           {OPERATIONS.map(renderItem)}
         </div>
-        <div>
-          <div className="font-mono text-[10px] text-faint tracking-widest uppercase px-2 mb-2">Counsel</div>
+        <div className="flex flex-col gap-1">
+          {!collapsed && <div className="font-mono text-muted" style={{ padding: "0 12px 6px", letterSpacing: ".16em", fontSize: 10 }}>COUNSEL</div>}
           {COUNSEL.map(renderItem)}
         </div>
       </nav>
 
-      {/* provider footer — reflects the active AI provider */}
-      <div className="p-3 border-t border-border font-mono text-[10px] text-faint leading-relaxed">
-        {provider === "gemini" ? (
-          <>
-            <div><span className="text-med">●</span> gemini · cloud</div>
-            <div>google api · data leaves</div>
-          </>
-        ) : (
-          <>
-            <div><span className="text-low">●</span> ollama · llama3.1:8b</div>
-            <div>127.0.0.1:11434 · nothing leaves</div>
-          </>
-        )}
-      </div>
+      {/* footer — active provider (hidden when collapsed) */}
+      {!collapsed && (
+        <div className="border-t border-border font-mono text-muted" style={{ padding: "14px 16px", lineHeight: 1.7, fontSize: 11 }}>
+          {provider === "gemini" ? (
+            <>
+              <div className="flex items-center gap-2"><Icon id="i-lantern" size={13} className="text-med" />gemini · cloud</div>
+              <div>google api · data leaves</div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2"><Icon id="i-lantern" size={13} className="text-low" />ollama · llama3.1:8b</div>
+              <div>127.0.0.1:11434 · nothing leaves</div>
+            </>
+          )}
+        </div>
+      )}
     </aside>
   )
 }
