@@ -1,6 +1,10 @@
 import { Icon } from './icons/Icons'
 import StainedGlassFacade from './StainedGlassFacade'
 
+// Provider accent (matches the sidebar/toggle/card convention): ollama azure, gemini orange.
+const PROVIDER_COLOR = { ollama: "#2FA4FF", gemini: "#F97316" }
+const providerColor = (p) => PROVIDER_COLOR[p] || "#2FA4FF"
+
 /* ── data helpers ─────────────────────────────────────────────────────────── */
 
 const SEV = [
@@ -46,16 +50,18 @@ function opsSummary(scans) {
   return { patrols: scans.length, targets: targets.size, reports }
 }
 
-function topModel(scans) {
+// Per-model usage across analyses, sorted most-used first — used for both the
+// "most consulted" line and the per-provider share bar.
+function modelUsage(scans) {
   const map = {}
   for (const s of scans) {
     if (s.analysis_status !== "completed") continue
     const m = s.analysis?.model
     if (!m) continue
-    map[m] = (map[m] || 0) + 1
+    if (!map[m]) map[m] = { model: m, provider: s.analysis?.provider, count: 0 }
+    map[m].count += 1
   }
-  const entries = Object.entries(map).sort((a, b) => b[1] - a[1])
-  return entries[0] ? { model: entries[0][0], count: entries[0][1] } : null
+  return Object.values(map).sort((a, b) => b.count - a.count)
 }
 
 // Last 7 days of AI reports (totals per day) for the candle chart.
@@ -64,7 +70,10 @@ function reportDays(scans, dayCount = 7) {
   for (const s of scans) {
     if (s.analysis_status !== "completed" || !s.analysis?.model) continue
     const key = new Date(s.created_at).toISOString().slice(0, 10)
-    byDay[key] = (byDay[key] || 0) + 1
+    if (!byDay[key]) byDay[key] = { total: 0, providers: {} }
+    byDay[key].total += 1
+    const p = s.analysis?.provider || "ollama"
+    byDay[key].providers[p] = (byDay[key].providers[p] || 0) + 1
   }
   const out = []
   const today = new Date()
@@ -72,7 +81,10 @@ function reportDays(scans, dayCount = 7) {
     const d = new Date(today)
     d.setDate(today.getDate() - i)
     const key = d.toISOString().slice(0, 10)
-    out.push({ key, total: byDay[key] || 0, label: `${key.slice(8, 10)}/${key.slice(5, 7)}` })
+    const rec = byDay[key] || { total: 0, providers: {} }
+    // the provider that produced most of that day's reports → the candle's flame colour
+    const provider = Object.entries(rec.providers).sort((a, b) => b[1] - a[1])[0]?.[0] || null
+    out.push({ key, total: rec.total, label: `${key.slice(8, 10)}/${key.slice(5, 7)}`, provider })
   }
   return out
 }
@@ -106,7 +118,9 @@ export default function Overview({ scans, onSelect, onViewAll }) {
   const ops = opsSummary(scans)
   const sev = severityCounts(scans)
   const threats = threatCounts(scans)
-  const tm = topModel(scans)
+  const models = modelUsage(scans)
+  const tm = models[0] || null
+  const totalReports = models.reduce((sum, m) => sum + m.count, 0)
   const days = reportDays(scans)
   const maxDay = Math.max(1, ...days.map((d) => d.total))
   const recent = scans.slice(0, 5)
@@ -187,13 +201,15 @@ export default function Overview({ scans, onSelect, onViewAll }) {
                 <div style={{ height: 120, display: "flex", alignItems: "flex-end", justifyContent: "space-between", padding: "0 8px" }}>
                   {days.map((d) => {
                     const b = candle(d.total, maxDay)
+                    const c = providerColor(d.provider)
+                    const glowId = d.provider === "gemini" ? "cd-glow-amber" : "cd-glow"
                     return (
                       <svg key={d.key} width="34" height="120" viewBox="0 0 34 120" style={{ overflow: "visible" }}>
-                        <ellipse cx="17" cy={b.gy} rx="15" ry="20" fill="url(#cd-glow)" opacity={b.fo} />
+                        <ellipse cx="17" cy={b.gy} rx="15" ry="20" fill={`url(#${glowId})`} opacity={b.fo} />
                         <g filter="url(#ink)" strokeLinecap="round" strokeLinejoin="round">
                           <path d={b.body} fill="#131A28" stroke={b.edge} strokeWidth="1.6" />
                           {b.wick && <path d={b.wick} fill="none" stroke="#8A97A8" strokeWidth="1.2" />}
-                          {b.flame && <path d={b.flame} fill="#2FA4FF" stroke="#EAF1F8" strokeWidth=".8" opacity={b.fo} />}
+                          {b.flame && <path d={b.flame} fill={c} stroke="#EAF1F8" strokeWidth=".8" opacity={b.fo} />}
                         </g>
                         <path d="M8 119H26" stroke="#55606F" strokeWidth="2" strokeLinecap="round" />
                       </svg>
@@ -210,13 +226,25 @@ export default function Overview({ scans, onSelect, onViewAll }) {
               </div>
             </div>
 
-            {/* legend + segmented share bar */}
-            <div className="flex items-center font-mono text-text" style={{ marginTop: 14, gap: 8, fontSize: 12 }}>
-              <span style={{ color: "#2FA4FF", lineHeight: 0 }}><Icon id="i-quill" size={14} /></span>{tm ? tm.model : "—"}
-              <span className="text-muted" style={{ marginLeft: "auto" }}>{tm ? `${tm.count} · 100%` : "—"}</span>
+            {/* per-model share — legend rows + segmented bar, coloured by provider */}
+            <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 6 }}>
+              {models.length === 0 && <div className="font-mono text-muted" style={{ fontSize: 12 }}>—</div>}
+              {models.map((m) => {
+                const pct = totalReports ? Math.round((m.count / totalReports) * 100) : 0
+                const c = providerColor(m.provider)
+                return (
+                  <div key={m.model} className="flex items-center font-mono text-text" style={{ gap: 8, fontSize: 12 }}>
+                    <span style={{ color: c, lineHeight: 0 }}><Icon id="i-quill" size={14} /></span>{m.model}
+                    <span className="text-muted" style={{ marginLeft: "auto" }}>{m.count} · {pct}%</span>
+                  </div>
+                )
+              })}
             </div>
-            <div style={{ height: 12, padding: 2, boxSizing: "border-box", backgroundColor: "#0A0E16", border: "1px solid rgba(130,160,210,.24)", boxShadow: "inset 0 2px 3px rgba(0,0,0,.7)" }}>
-              <div style={{ height: "100%", width: "100%", background: "repeating-linear-gradient(90deg,#2FA4FF 0 26px,#0A0E16 26px 28px)", boxShadow: "0 0 10px rgba(47,164,255,.35)" }} />
+            <div style={{ height: 12, marginTop: 8, padding: 2, boxSizing: "border-box", backgroundColor: "#0A0E16", border: "1px solid rgba(130,160,210,.24)", boxShadow: "inset 0 2px 3px rgba(0,0,0,.7)", display: "flex", gap: 2 }}>
+              {models.map((m) => {
+                const c = providerColor(m.provider)
+                return <div key={m.model} style={{ height: "100%", width: `${totalReports ? (m.count / totalReports) * 100 : 0}%`, background: `repeating-linear-gradient(90deg,${c} 0 26px,#0A0E16 26px 28px)`, boxShadow: `0 0 10px ${c}59` }} />
+              })}
             </div>
           </div>
         </div>
