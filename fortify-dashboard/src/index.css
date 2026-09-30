@@ -40,21 +40,54 @@ body {
    token or a neutral bevel shadow — nothing in the palette is recoloured.
    2px radius everywhere (deliberately sharp). Live data stays plain. */
 :root {
-  --tex-stone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .51 0 0 0 0 .63 0 0 0 0 .82 .5 0 0 0 -.16'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --tex-stone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .51 0 0 0 0 .63 0 0 0 0 .82 .3 0 0 0 -.12'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --tex-wall: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='160'%3E%3Cg fill='rgb(130,160,210)'%3E%3Crect x='1' y='1' width='178' height='78' fill-opacity='0.018'/%3E%3Crect x='181' y='1' width='148' height='78' fill-opacity='0.006'/%3E%3Crect x='331' y='1' width='148' height='78' fill-opacity='0.013'/%3E%3Crect x='1' y='81' width='88' height='78' fill-opacity='0.009'/%3E%3Crect x='91' y='81' width='168' height='78' fill-opacity='0.020'/%3E%3Crect x='261' y='81' width='138' height='78' fill-opacity='0.005'/%3E%3Crect x='401' y='81' width='78' height='78' fill-opacity='0.015'/%3E%3C/g%3E%3Cpath d='M0 .5H480M0 80.5H480M.5 0V160M180.5 0V80M330.5 0V80M90.5 80V160M260.5 80V160M400.5 80V160' stroke='%23000' stroke-opacity='.13' stroke-width='1.4'/%3E%3Cpath d='M0 2.5H480M0 82.5H480M2.5 0V160M182.5 0V80M332.5 0V80M92.5 80V160M262.5 80V160M402.5 80V160' stroke='rgb(234,241,248)' stroke-opacity='.012'/%3E%3Cpath d='M0 78.5H480M0 158.5H480M178.5 0V80M328.5 0V80M478.5 0V160M88.5 80V160M258.5 80V160M398.5 80V160' stroke='%23000' stroke-opacity='.05'/%3E%3C/svg%3E");
+  --tex-mottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='640'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.006' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .51 0 0 0 0 .63 0 0 0 0 .82 .1 0 0 0 -.05'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+  --tex-ashlar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='64'%3E%3Cpath d='M0 .5H160M0 32.5H160M.5 0V32M80.5 0V32M40.5 32V64M120.5 32V64' stroke='rgba(130,160,210,.08)' fill='none'/%3E%3C/svg%3E");
   --tex-iron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.3 .32' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .51 0 0 0 0 .63 0 0 0 0 .82 .6 0 0 0 -.24'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --rivets: radial-gradient(circle at 9px 9px,#8A97A8 0,#55606F 1.4px,#0A0E16 2.6px,transparent 3.2px),radial-gradient(circle at calc(100% - 9px) 9px,#8A97A8 0,#55606F 1.4px,#0A0E16 2.6px,transparent 3.2px),radial-gradient(circle at 9px calc(100% - 9px),#8A97A8 0,#55606F 1.4px,#0A0E16 2.6px,transparent 3.2px),radial-gradient(circle at calc(100% - 9px) calc(100% - 9px),#8A97A8 0,#55606F 1.4px,#0A0E16 2.6px,transparent 3.2px);
 }
 
-/* Carved Stone: mottled ashlar surface + chiselled double-edge borders. */
+/* Page background — layered stone (wall ashlar + fine grain + low mottle). */
+.page-stone {
+  background-color: var(--color-bg);
+  background-image: var(--tex-wall), var(--tex-stone), var(--tex-mottle);
+}
+
+/* Carved Stone panel: 4px stone-textured border (light top-left, dark bottom-right)
+   over a surface fill. The chiselled edge carries the material more than the fill. */
 .panel-stone {
-  background: var(--tex-stone) border-box, linear-gradient(var(--color-surface-2), var(--color-surface-2)) border-box;
+  border: 4px solid transparent;
   border-radius: 2px;
+  background:
+    linear-gradient(var(--color-surface), var(--color-surface)) padding-box,
+    var(--tex-stone) border-box,
+    linear-gradient(var(--color-surface-2), var(--color-surface-2)) border-box;
   box-shadow:
-    0 0 0 1px rgba(130, 160, 210, 0.20),
-    inset 1px 1px 0 rgba(0, 0, 0, 0.70),
-    inset -1px -1px 0 rgba(234, 241, 248, 0.06),
+    0 0 0 1px rgba(130, 160, 210, 0.2),
+    inset 1px 1px 0 rgba(234, 241, 248, 0.09),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.75),
     0 2px 0 1px rgba(0, 0, 0, 0.45);
 }
+
+/* Primary / secondary buttons (handoff component spec). */
+.btn-primary {
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  color: var(--color-bg);
+  font-weight: 600;
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(234, 241, 248, 0.45), inset 0 -2px 0 rgba(10, 14, 22, 0.25), 0 0 18px rgba(47, 164, 255, 0.25);
+}
+.btn-secondary {
+  background-color: var(--color-surface-2);
+  background-image: var(--tex-stone);
+  border: 1px solid rgba(130, 160, 210, 0.22);
+  color: var(--color-text);
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(234, 241, 248, 0.06), 0 2px 0 rgba(0, 0, 0, 0.45);
+}
+.btn-secondary:hover { background-color: var(--color-surface-2); color: var(--color-text); }
 
 /* Wrought Iron: hammered plate, riveted corners, forged double-rim (active/critical).
    Static treatment — glow colour themable via --iron-glow. */

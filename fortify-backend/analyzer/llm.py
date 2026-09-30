@@ -20,6 +20,16 @@ def get_llm_response(prompt: str, provider: str | None = None, api_key: str | No
     return _ollama_response(prompt)
 
 
+def resolve_provider_model(provider: str | None = None) -> tuple[str, str]:
+    # Same resolution as get_llm_response, but returns the (provider, model) that
+    # WOULD handle the call — so analyses can record who produced them. The label
+    # always matches the model that actually runs (anything not gemini → ollama).
+    provider = provider or os.getenv("LLM_PROVIDER", "ollama")
+    if provider == "gemini":
+        return "gemini", GEMINI_MODEL
+    return "ollama", OLLAMA_MODEL
+
+
 def _ollama_response(prompt: str) -> str:
     # temperature 0 + fixed seed → near-deterministic output for the same scan
     payload = {

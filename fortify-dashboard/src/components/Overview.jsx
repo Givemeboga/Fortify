@@ -1,130 +1,226 @@
-import SiegeLog from './SiegeLog'
 import { Icon } from './icons/Icons'
+import StainedGlassFacade from './StainedGlassFacade'
 
-// Severity levels in display order — mirrors the SeverityStrip on the Battle
-// Report so the fleet rollup reads as the same "war-room tally". `color` is a
-// literal token class (Tailwind can't see runtime-built class names).
-const LEVELS = [
-  { key: "critical", label: "Critical", color: "text-crit", icon: "i-sev-crit" },
-  { key: "high",     label: "High",     color: "text-high", icon: "i-sev-high" },
-  { key: "medium",   label: "Medium",   color: "text-med",  icon: "i-sev-med" },
-  { key: "low",      label: "Low",      color: "text-low",  icon: "i-sev-low" },
+/* ── data helpers ─────────────────────────────────────────────────────────── */
+
+const SEV = [
+  { key: "critical", label: "CRITICAL", c: "#FF4D4D", glow: "rgba(255,77,77,.45)", icon: "i-sev-crit" },
+  { key: "high",     label: "HIGH",     c: "#F97316", glow: "rgba(249,115,22,.45)", icon: "i-sev-high" },
+  { key: "medium",   label: "MEDIUM",   c: "#F5C518", glow: "rgba(245,197,24,.45)", icon: "i-sev-med" },
+  { key: "low",      label: "LOW",      c: "#3DD68C", glow: "rgba(61,214,140,.45)", icon: "i-sev-low" },
+]
+const SEV_BY = Object.fromEntries(SEV.map((s) => [s.key, s]))
+
+// Vulnerability rows (Command spec icons): vial / scroll / ladder / key / banner.
+const THREATS = [
+  { key: "sqli",      name: "SQL Injection",        icon: "i-vial",   test: (r) => r.sqli?.vulnerable || r.sqli_boolean?.vulnerable },
+  { key: "xss",       name: "Cross-Site Scripting", icon: "i-scroll", test: (r) => r.xss?.vulnerable },
+  { key: "traversal", name: "Path Traversal",       icon: "i-ladder", test: (r) => r.path_traversal?.vulnerable },
+  { key: "tls",       name: "Weak TLS",             icon: "i-key",    test: (r) => r.tls && (r.tls.cert_valid === false || r.tls.cert_expired === true) },
+  { key: "headers",   name: "Missing Headers",      icon: "i-banner", test: (r) => (r.headers?.missing_headers?.length || 0) > 0 },
 ]
 
-// Tally how many *analyzed* scans sit at each severity level.
-// A scan counts only once its analysis has completed and produced an overall
-// risk — pending / running / failed / never-analyzed scans have no verdict yet,
-// so they contribute nothing. `level in counts` also drops any unexpected level.
-function rollup(scans) {
-  const counts = { critical: 0, high: 0, medium: 0, low: 0 }
+function severityCounts(scans) {
+  const c = { critical: 0, high: 0, medium: 0, low: 0 }
   for (const s of scans) {
     if (s.analysis_status !== "completed") continue
-    const level = s.analysis?.overall_risk?.level
-    if (level in counts) counts[level] += 1
+    const lvl = s.analysis?.overall_risk?.level
+    if (lvl in c) c[lvl] += 1
   }
-  return counts
+  return c
 }
 
-// Neutral fleet context — counts every scan, analyzed or not.
-function opsSummary(scans) {
-  const targets = new Set(scans.map((s) => s.target_url))
-  const reports = scans.filter((s) => s.analysis_status === "completed").length
-  return { patrols: scans.length, targets: targets.size, reports }
-}
-
-// Vulnerability classes, read straight from each scan's raw `results`.
-// `test(results)` is true when that scan tripped the check.
-const VULN_CLASSES = [
-  { key: "sqli",      label: "SQL Injection",        icon: "i-vial",       test: (r) => r.sqli?.vulnerable || r.sqli_boolean?.vulnerable },
-  { key: "xss",       label: "Cross-Site Scripting", icon: "i-herald",     test: (r) => r.xss?.vulnerable },
-  { key: "traversal", label: "Path Traversal",       icon: "i-postern",    test: (r) => r.path_traversal?.vulnerable },
-  { key: "tls",       label: "Weak TLS",             icon: "i-seal-crack", test: (r) => r.tls && (r.tls.cert_valid === false || r.tls.cert_expired === true) },
-  { key: "headers",   label: "Missing Headers",      icon: "i-ward",       test: (r) => (r.headers?.missing_headers?.length || 0) > 0 },
-]
-
-// How many scans tripped each vulnerability class across the fleet.
-function vulnBreakdown(scans) {
-  const counts = Object.fromEntries(VULN_CLASSES.map((v) => [v.key, 0]))
+function threatCounts(scans) {
+  const c = Object.fromEntries(THREATS.map((t) => [t.key, 0]))
   for (const s of scans) {
     const r = s.results
     if (!r) continue
-    for (const v of VULN_CLASSES) if (v.test(r)) counts[v.key] += 1
+    for (const t of THREATS) if (t.test(r)) c[t.key] += 1
   }
-  return counts
+  return c
 }
 
+function opsSummary(scans) {
+  const targets = new Set(scans.map((s) => s.target_url))
+  const reports = scans.filter((s) => s.analysis_status === "completed" && s.analysis?.model).length
+  return { patrols: scans.length, targets: targets.size, reports }
+}
+
+function topModel(scans) {
+  const map = {}
+  for (const s of scans) {
+    if (s.analysis_status !== "completed") continue
+    const m = s.analysis?.model
+    if (!m) continue
+    map[m] = (map[m] || 0) + 1
+  }
+  const entries = Object.entries(map).sort((a, b) => b[1] - a[1])
+  return entries[0] ? { model: entries[0][0], count: entries[0][1] } : null
+}
+
+// Last 7 days of AI reports (totals per day) for the candle chart.
+function reportDays(scans, dayCount = 7) {
+  const byDay = {}
+  for (const s of scans) {
+    if (s.analysis_status !== "completed" || !s.analysis?.model) continue
+    const key = new Date(s.created_at).toISOString().slice(0, 10)
+    byDay[key] = (byDay[key] || 0) + 1
+  }
+  const out = []
+  const today = new Date()
+  for (let i = dayCount - 1; i >= 0; i--) {
+    const d = new Date(today)
+    d.setDate(today.getDate() - i)
+    const key = d.toISOString().slice(0, 10)
+    out.push({ key, total: byDay[key] || 0, label: `${key.slice(8, 10)}/${key.slice(5, 7)}` })
+  }
+  return out
+}
+
+// Candle geometry for one day (34×120 viewBox, holder at y118) — matches the
+// handoff support script: rounded-top body (+ a drip on lit days), wick, flame.
+function candle(v, max) {
+  const lit = v > 0
+  const h = lit ? 8 + (80 * v) / max : 8
+  const t = 118 - h
+  return {
+    body: `M11 118V${t + 3}Q11 ${t} 17 ${t}Q23 ${t} 23 ${t + 3}V118Z${lit ? `M20 ${t + 1}V${t + 9}` : ""}`,
+    wick: lit ? `M17 ${t}V${t - 5}` : "",
+    flame: lit ? `M17 ${t - 5}C12.5 ${t - 9} 14 ${t - 17} 17 ${t - 23}C20 ${t - 17} 21.5 ${t - 9} 17 ${t - 5}Z` : "",
+    gy: t - 13,
+    edge: lit ? "#8A97A8" : "#55606F",
+    fo: lit ? 1 : 0,
+    lc: lit ? "#EAF1F8" : "#55606F",
+  }
+}
+
+function formatTime(iso) {
+  const d = new Date(iso)
+  const p = (n) => String(n).padStart(2, "0")
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+}
+
+/* ── component ────────────────────────────────────────────────────────────── */
+
 export default function Overview({ scans, onSelect, onViewAll }) {
-  const counts = rollup(scans)
   const ops = opsSummary(scans)
-  const vulns = vulnBreakdown(scans)
+  const sev = severityCounts(scans)
+  const threats = threatCounts(scans)
+  const tm = topModel(scans)
+  const days = reportDays(scans)
+  const maxDay = Math.max(1, ...days.map((d) => d.total))
+  const recent = scans.slice(0, 5)
+
+  const facadeStats = [
+    { n: ops.patrols, label: "PATROLS RUN" },
+    { n: ops.targets, label: "TARGETS WATCHED" },
+    { n: ops.reports, label: "REPORTS DRAFTED" },
+  ]
 
   return (
-    <>
-      <h1 className="font-display text-3xl">Command</h1>
-      <span className="font-mono text-xs text-muted tracking-widest uppercase">// state of the keep</span>
+    <div style={{ width: "100%", maxWidth: 1128, margin: "0 auto", display: "flex", flexDirection: "column", gap: 28 }}>
+      {/* page header */}
+      <div className="flex flex-col gap-2">
+        <h1 className="font-display font-semibold leading-none text-text" style={{ fontSize: 44 }}>Command</h1>
+        <span className="font-mono text-muted" style={{ fontSize: 12, letterSpacing: ".16em" }}>// STATE OF THE KEEP</span>
+      </div>
 
-      {/* Operations summary — neutral fleet context */}
-      <div className="mt-8 grid grid-cols-3 gap-3">
-        {[
-          { label: "Patrols run", value: ops.patrols },
-          { label: "Targets watched", value: ops.targets },
-          { label: "Reports drafted", value: ops.reports },
-        ].map((c) => (
-          <div key={c.label} className="panel-iron px-4 py-3">
-            <div className="font-display text-3xl leading-none text-text">{c.value}</div>
-            <div className="font-mono text-[11px] font-medium uppercase tracking-widest text-muted mt-1">{c.label}</div>
+      {/* stained-glass stat façade */}
+      <StainedGlassFacade stats={facadeStats} />
+
+      {/* severity strip */}
+      <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(4,minmax(0,1fr))" }}>
+        {SEV.map((s) => (
+          <div key={s.key} className="panel-stone flex items-center" style={{ gap: 14, padding: "16px 20px" }}>
+            <span style={{ color: s.c, filter: `drop-shadow(0 0 6px ${s.glow})`, lineHeight: 0 }}>
+              <Icon id={s.icon} size={26} />
+            </span>
+            <div>
+              <div style={{ fontFamily: "'Grenze Gotisch',serif", fontSize: 34, lineHeight: 1, color: s.c }}>{sev[s.key]}</div>
+              <div className="font-mono text-muted" style={{ marginTop: 4, fontSize: 11, letterSpacing: ".16em" }}>{s.label}</div>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Fleet severity rollup — same card treatment as the Battle Report's SeverityStrip */}
-      <div className="mt-8 grid grid-cols-4 gap-3">
-        {LEVELS.map((l) => {
-          const n = counts[l.key] ?? 0
-          const active = n > 0
-          return (
-            <div
-              key={l.key}
-              className={`panel-stone flex items-center gap-3 px-4 py-3 ${active ? "" : "opacity-40"}`}
-            >
-              <Icon id={l.icon} size={26} className={active ? l.color : "text-faint"} />
-              <div>
-                <div className={`font-display text-4xl leading-none ${active ? l.color : "text-muted"}`}>{n}</div>
-                <div className="font-mono text-[11px] font-medium uppercase tracking-widest text-muted mt-1">{l.label}</div>
+      {/* two columns: Threats sighted + The Scriptorium */}
+      <div className="grid gap-6" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)" }}>
+        {/* Threats sighted */}
+        <div className="flex flex-col gap-3">
+          <h2 className="font-display font-semibold leading-none text-text" style={{ fontSize: 26 }}>Threats sighted</h2>
+          <div className="panel-stone flex-1" style={{ padding: "6px 20px" }}>
+            {THREATS.map((t) => {
+              const n = threats[t.key]
+              const on = n > 0
+              return (
+                <div
+                  key={t.key}
+                  className="flex items-center"
+                  style={{ gap: 12, height: 52, borderBottom: "1px solid rgba(130,160,210,.08)", opacity: on ? 1 : 0.35 }}
+                >
+                  <span style={{ color: on ? "#F97316" : "#8A97A8", lineHeight: 0 }}><Icon id={t.icon} size={18} /></span>
+                  <span className="font-mono text-text" style={{ fontSize: 14 }}>{t.name}</span>
+                  <span className="font-mono text-text" style={{ marginLeft: "auto", fontSize: 14, fontWeight: 700 }}>{n}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* The Scriptorium */}
+        <div className="flex flex-col gap-3">
+          <h2 className="font-display font-semibold leading-none text-text" style={{ fontSize: 26 }}>The Scriptorium</h2>
+          <div className="panel-stone flex-1 flex flex-col" style={{ padding: "18px 20px", gap: 6 }}>
+            <div className="flex items-center font-mono text-muted" style={{ gap: 8, fontSize: 10, letterSpacing: ".16em" }}>
+              <span style={{ color: "#2FA4FF", lineHeight: 0 }}><Icon id="i-quill" size={14} /></span>MOST CONSULTED
+            </div>
+            <div className="font-mono text-text" style={{ fontSize: 22 }}>{tm ? tm.model : "—"}</div>
+            <div className="font-mono text-muted" style={{ fontSize: 13 }}>{tm ? `${tm.count} report${tm.count === 1 ? "" : "s"} drafted` : "no reports yet"}</div>
+
+            <div className="font-mono text-muted" style={{ marginTop: 14, fontSize: 10, letterSpacing: ".16em" }}>REPORTS OVER TIME</div>
+            <div className="flex" style={{ gap: 10, marginTop: 6 }}>
+              {/* y-axis */}
+              <div className="font-mono" style={{ height: 120, display: "flex", flexDirection: "column", justifyContent: "space-between", fontSize: 10, color: "#55606F", textAlign: "right" }}>
+                <span>{maxDay}</span><span>{Math.round(maxDay / 2)}</span><span>0</span>
+              </div>
+              <div className="flex-1 flex flex-col">
+                <div style={{ height: 120, display: "flex", alignItems: "flex-end", justifyContent: "space-between", padding: "0 8px" }}>
+                  {days.map((d) => {
+                    const b = candle(d.total, maxDay)
+                    return (
+                      <svg key={d.key} width="34" height="120" viewBox="0 0 34 120" style={{ overflow: "visible" }}>
+                        <ellipse cx="17" cy={b.gy} rx="15" ry="20" fill="url(#cd-glow)" opacity={b.fo} />
+                        <g filter="url(#ink)" strokeLinecap="round" strokeLinejoin="round">
+                          <path d={b.body} fill="#131A28" stroke={b.edge} strokeWidth="1.6" />
+                          {b.wick && <path d={b.wick} fill="none" stroke="#8A97A8" strokeWidth="1.2" />}
+                          {b.flame && <path d={b.flame} fill="#2FA4FF" stroke="#EAF1F8" strokeWidth=".8" opacity={b.fo} />}
+                        </g>
+                        <path d="M8 119H26" stroke="#55606F" strokeWidth="2" strokeLinecap="round" />
+                      </svg>
+                    )
+                  })}
+                </div>
+                {/* stone ledge */}
+                <div style={{ height: 9, backgroundColor: "#131A28", backgroundImage: "var(--tex-stone)", borderTop: "1px solid rgba(234,241,248,.1)", boxShadow: "0 2px 0 rgba(0,0,0,.55), inset 0 -1px 0 rgba(0,0,0,.5)" }} />
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 8px 0" }}>
+                  {days.map((d) => (
+                    <span key={d.key} className="font-mono" style={{ width: 34, textAlign: "center", fontSize: 10, color: candle(d.total, maxDay).lc }}>{d.label}</span>
+                  ))}
+                </div>
               </div>
             </div>
-          )
-        })}
-      </div>
 
-      {/* Vulnerability breakdown — what kinds of holes exist across the fleet */}
-      <div className="mt-8">
-        <h2 className="font-display text-xl mb-3">Threats sighted</h2>
-        <div className="panel-stone divide-y divide-border/60">
-          {VULN_CLASSES.map((v) => {
-            const n = vulns[v.key]
-            const active = n > 0
-            return (
-              <div key={v.key} className={`flex items-center justify-between px-4 py-2.5 ${active ? "" : "opacity-40"}`}>
-                <span className="flex items-center gap-2.5">
-                  <Icon id={v.icon} size={18} className={active ? "text-high" : "text-faint"} />
-                  <span className={`font-mono text-sm ${active ? "text-text" : "text-faint"}`}>{v.label}</span>
-                </span>
-                <span className={`font-display text-xl ${active ? "text-text" : "text-faint"}`}>{n}</span>
-              </div>
-            )
-          })}
+            {/* legend + segmented share bar */}
+            <div className="flex items-center font-mono text-text" style={{ marginTop: 14, gap: 8, fontSize: 12 }}>
+              <span style={{ color: "#2FA4FF", lineHeight: 0 }}><Icon id="i-quill" size={14} /></span>{tm ? tm.model : "—"}
+              <span className="text-muted" style={{ marginLeft: "auto" }}>{tm ? `${tm.count} · 100%` : "—"}</span>
+            </div>
+            <div style={{ height: 12, padding: 2, boxSizing: "border-box", backgroundColor: "#0A0E16", border: "1px solid rgba(130,160,210,.24)", boxShadow: "inset 0 2px 3px rgba(0,0,0,.7)" }}>
+              <div style={{ height: "100%", width: "100%", background: "repeating-linear-gradient(90deg,#2FA4FF 0 26px,#0A0E16 26px 28px)", boxShadow: "0 0 10px rgba(47,164,255,.35)" }} />
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* Recent activity — compact preview, full list one click away */}
-      <div className="mt-10 flex items-baseline justify-between">
-        <h2 className="font-display text-xl">Recent activity</h2>
-        <button onClick={onViewAll} className="font-mono text-xs text-accent hover:brightness-110">
-          View all →
-        </button>
-      </div>
-      <SiegeLog scans={scans} onSelect={onSelect} heading={null} limit={3} />
-    </>
+    </div>
   )
 }

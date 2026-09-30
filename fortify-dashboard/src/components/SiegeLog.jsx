@@ -1,132 +1,101 @@
 import { useState } from 'react'
 import { Icon } from './icons/Icons'
 
-// Status = low-weight dot + label (a scan's lifecycle, not its risk).
-// Live/in-progress rows stay plain — operators read status fast (per handoff).
-const STATUS_DOT = {
-  completed: "bg-low",
-  running:   "bg-accent",
-  pending:   "bg-accent",
-  failed:    "bg-crit",
+const SEV = {
+  critical: { c: "#FF4D4D", icon: "i-sev-crit", label: "CRITICAL" },
+  high:     { c: "#F97316", icon: "i-sev-high", label: "HIGH" },
+  medium:   { c: "#F5C518", icon: "i-sev-med",  label: "MEDIUM" },
+  low:      { c: "#3DD68C", icon: "i-sev-low",  label: "LOW" },
 }
-function statusDot(status) {
-  return STATUS_DOT[status] || "bg-muted"
-}
-
-// Severity = the louder signal (a bordered, tinted badge + shield icon).
-const SEVERITY_BADGE = {
-  critical: "text-crit border-crit/40 bg-crit/10",
-  high:     "text-high border-high/40 bg-high/10",
-  medium:   "text-med border-med/40 bg-med/10",
-  low:      "text-low border-low/40 bg-low/10",
-}
-const SEV_ICON = { critical: "i-sev-crit", high: "i-sev-high", medium: "i-sev-med", low: "i-sev-low" }
+const COLS = "minmax(0,2.4fr) 110px 140px 140px 180px 40px"
 
 function formatTime(iso) {
-  return new Date(iso).toLocaleString()
+  const d = new Date(iso)
+  const p = (n) => String(n).padStart(2, "0")
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
 }
 
-// `heading={null}` hides the built-in header (when a parent supplies its own).
-// `limit` caps the rows and drops pagination — for compact previews.
-function SiegeLog({ scans, onDelete, onSelect, heading = "Siege Log", limit = null }) {
-  const [page, setPage] = useState(0)          // local UI state
-  const paginated = limit == null
+// `heading` kept for compatibility; the Siege Log page supplies its own <h1>.
+function SiegeLog({ scans, onDelete, onSelect }) {
+  const [page, setPage] = useState(0)
   const pageSize = 10
   const totalPages = Math.max(1, Math.ceil(scans.length / pageSize))
   const start = page * pageSize
-  const pageScans = paginated ? scans.slice(start, start + pageSize) : scans.slice(0, limit)
+  const pageScans = scans.slice(start, start + pageSize)
 
   return (
-    <div className="mt-8">
-      {/* header */}
-      {heading && (
-        <div className="flex items-baseline gap-3 mb-3">
-          <h2 className="font-display text-xl">{heading}</h2>
-          <span className="font-mono text-xs text-muted">{scans.length} scans · newest first</span>
-        </div>
-      )}
-
-      {/* empty state */}
+    <div className="flex flex-col" style={{ gap: 16 }}>
       {scans.length === 0 ? (
-        <div className="font-mono py-6">
-          <div className="text-sm text-text">The watch is quiet.</div>
-          <div className="text-xs text-muted mt-1">No scans yet — enter a URL above to run your first patrol.</div>
+        <div className="panel-stone font-mono" style={{ padding: "18px 20px" }}>
+          <div className="text-text" style={{ fontSize: 14 }}>The watch is quiet.</div>
+          <div className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>No scans yet — enter a URL above to run your first patrol.</div>
         </div>
       ) : (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="font-mono text-[10px] text-faint uppercase tracking-widest text-left border-b border-border">
-              <th className="py-2 pr-6 font-normal">Target</th>
-              <th className="py-2 pr-6 font-normal">Mode</th>
-              <th className="py-2 pr-6 font-normal">Status</th>
-              <th className="py-2 pr-6 font-normal">Severity</th>
-              <th className="py-2 pr-6 font-normal">Started</th>
-              <th className="py-2 font-normal"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {pageScans.map((scan) => {
-              const level = scan.analysis?.overall_risk?.level
-              return (
-              <tr
-                key={scan.id}
-                onClick={() => onSelect(scan.id)}
-                className="border-b border-border/50 hover:bg-surface-2 cursor-pointer"
+        <div className="panel-stone" style={{ padding: "0 20px 6px" }}>
+          <div className="grid items-center font-mono text-muted" style={{ gridTemplateColumns: COLS, height: 40, fontSize: 10, letterSpacing: ".16em", borderBottom: "1px solid rgba(130,160,210,.14)" }}>
+            <span>TARGET</span><span>MODE</span><span>STATUS</span><span>SEVERITY</span><span>STARTED</span><span />
+          </div>
+          {pageScans.map((r) => {
+            const done = r.status === "completed"
+            const s = done ? SEV[r.analysis?.overall_risk?.level] : null
+            return (
+              <div
+                key={r.id}
+                onClick={() => onSelect(r.id)}
+                className="grid items-center font-mono cursor-pointer"
+                style={{ gridTemplateColumns: COLS, height: 46, fontSize: 13, borderBottom: "1px solid rgba(130,160,210,.08)" }}
               >
-                <td className="py-2 pr-6 font-mono text-text whitespace-nowrap">{scan.target_url}</td>
-                <td className="py-2 pr-6 font-mono text-muted">{scan.scan_type}</td>
-                <td className="py-2 pr-6">
-                  <span className="flex items-center gap-2 font-mono text-xs text-muted">
-                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusDot(scan.status)} ${(scan.status === "pending" || scan.status === "running") ? "anim-pulse" : ""}`} />
-                    {scan.status}
+                <span className="text-text truncate">{r.target_url}</span>
+                <span className="text-muted">{r.scan_type}</span>
+                <span className="flex items-center text-muted" style={{ gap: 8 }}>
+                  <span style={{ color: done ? "#3DD68C" : "#8A97A8", lineHeight: 0 }}>
+                    <Icon id={done ? "i-seal" : "i-hourglass"} size={13} />
                   </span>
-                </td>
-                <td className="py-2 pr-6">
-                  {level ? (
-                    <span className={`inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase px-2 py-0.5 rounded-[2px] border ${SEVERITY_BADGE[level] || "text-muted border-border"}`}>
-                      <Icon id={SEV_ICON[level]} size={12} />
-                      {level}
+                  {r.status}
+                </span>
+                <span>
+                  {s ? (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 24, padding: "0 9px 0 7px", fontSize: 11, fontWeight: 700, letterSpacing: ".08em", color: s.c, background: `${s.c}1a`, border: `1px solid ${s.c}73` }}>
+                      <span style={{ color: s.c, lineHeight: 0 }}><Icon id={s.icon} size={13} /></span>{s.label}
                     </span>
                   ) : (
-                    <span className="font-mono text-xs text-faint">—</span>
+                    <span className="text-faint">—</span>
                   )}
-                </td>
-                <td className="py-2 pr-6 font-mono text-muted whitespace-nowrap">{formatTime(scan.created_at)}</td>
-                <td className="py-2">
-                  {onDelete && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onDelete(scan.id) }}
-                      className="text-faint hover:text-crit font-mono"
-                      title="Delete scan"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </td>
-              </tr>
-              )
-            })}
-          </tbody>
-        </table>
+                </span>
+                <span className="text-muted">{formatTime(r.created_at)}</span>
+                <span
+                  title="Delete scan"
+                  onClick={(e) => { e.stopPropagation(); onDelete(r.id) }}
+                  className="flex items-center justify-center"
+                  style={{ width: 36, height: 36, color: "#8A97A8" }}
+                >
+                  <Icon id="i-strike" size={15} />
+                </span>
+              </div>
+            )
+          })}
+        </div>
       )}
 
-      {/* pagination controls — only when more than one page (never in limited previews) */}
-      {paginated && totalPages > 1 && (
-        <div className="flex items-center gap-4 mt-4 font-mono text-xs text-muted">
+      {/* pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center font-mono text-muted" style={{ gap: 16, fontSize: 12 }}>
           <button
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0}
-            className="px-3 py-1 border border-border rounded hover:text-text disabled:opacity-30 disabled:hover:text-muted"
+            className="flex items-center"
+            style={{ height: 36, padding: "0 14px", gap: 8, borderRadius: 2, backgroundColor: "#131A28", backgroundImage: "var(--tex-stone)", color: "#EAF1F8", border: "1px solid rgba(130,160,210,.22)", opacity: page === 0 ? 0.4 : 1 }}
           >
-            ← Prev
+            <span style={{ transform: "scaleX(-1)", lineHeight: 0 }}><Icon id="i-arrow-r" size={13} /></span>Prev
           </button>
-          <span>Page {page + 1} of {totalPages}</span>
+          <span style={{ color: "#EAF1F8" }}>Page {page + 1} of {totalPages}</span>
           <button
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             disabled={page >= totalPages - 1}
-            className="px-3 py-1 border border-border rounded hover:text-text disabled:opacity-30 disabled:hover:text-muted"
+            className="flex items-center"
+            style={{ height: 36, padding: "0 14px", gap: 8, borderRadius: 2, backgroundColor: "#131A28", backgroundImage: "var(--tex-stone)", color: "#EAF1F8", border: "1px solid rgba(130,160,210,.22)", boxShadow: "inset 0 1px 0 rgba(234,241,248,.06), 0 2px 0 rgba(0,0,0,.45)", opacity: page >= totalPages - 1 ? 0.4 : 1 }}
           >
-            Next →
+            Next<span style={{ lineHeight: 0 }}><Icon id="i-arrow-r" size={13} /></span>
           </button>
         </div>
       )}
