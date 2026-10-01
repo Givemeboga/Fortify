@@ -45,7 +45,7 @@
 |---|---|---|
 | **Scanner** | Python module testing for common issues (headers, TLS, misconfigurations, injections) | 🟢 Passive + active |
 | **AI Analyzer** | Explains scanner findings and gives remediation, with severity **scored deterministically in code** — **local by default (Ollama)** so data stays on your machine; pluggable | 🟢 Complete |
-| **Dashboard** | React + Tailwind console to launch scans, watch the live Siege Log, read AI reports, and pick the provider | 🟢 Complete |
+| **Dashboard** | React + Tailwind gothic "Keep" console — a Command overview (stained-glass stat façade, severity rollup, threat & AI-model breakdowns), the Siege Log, Battle Reports, and provider settings | 🟢 Complete |
 
 > ⚠️ **AI output is guidance, not ground truth.** The scanner's raw results are the authoritative facts, and the AI's explanations are a triage starting point — verify before acting. (Severity **scores are computed deterministically in code**, not by the LLM, so they don't drift between runs.)
 
@@ -54,6 +54,8 @@
 ## Screenshots
 
 The operator console, running live against the scanner and AI Analyzer.
+
+> ℹ️ The shots below are from the v1.1 console. **v1.2.0 introduces the gothic "Keep" redesign** — a Command overview dashboard, the Scriptorium, and the Siege Log / Counsel split described under [How It Works](#how-it-works). Refreshed screenshots are on the way.
 
 **Command** — launch a scan and watch the live Siege Log.
 
@@ -271,15 +273,18 @@ Scans run as background tasks; results persist to **SQLite** with a full create 
 
 ### AI Analyzer (grounded)
 
-Turns raw scan facts into an interpreted risk report: overall risk score/level, plain-language summary, per-finding severity + remediation, and a prioritized fix order. It runs on a **local LLM via [Ollama](https://ollama.com)** by default (data never leaves your machine); a **cloud option (Google Gemini)** is available opt-in, BYOK, from Settings.
+Turns raw scan facts into an interpreted risk report: overall risk score/level, plain-language summary, per-finding severity + remediation, and a prioritized fix order. It runs on a **local LLM via [Ollama](https://ollama.com)** by default (data never leaves your machine); a **cloud option (Google Gemini)** is available opt-in, BYOK, from Counsel. Each report records which **provider and model** produced it, which the Command dashboard's Scriptorium aggregates.
 
 To stay trustworthy, the analyzer is **grounded** and the numbers are **deterministic**: findings are extracted from the scan results **in code** first, and each is assigned a severity **score and level by a fixed rule table in code** (with context bumps — e.g. a version-disclosing header scores higher than a bare one; an exposed `.env` higher than a generic path). The LLM is asked only to *explain, remediate, and summarize* the confirmed findings — **never to score or invent** them. It runs at **temperature 0**, so the same scan yields the same report every time. Every report carries a verify-before-acting disclaimer.
 
-### Dashboard (React + Tailwind)
+### Dashboard (React + Tailwind) — the "Keep" theme
 
-- **Command** — scan form with a passive/active toggle and an explicit **consent gate** for active scans, plus a live **Siege Log** (polls the API, colour-codes status, delete + pagination).
-- **Battle Report** — raw findings beside an animated **AI analysis** panel; analysis runs non-blocking with a spinner, exports to **PDF**, and the view is URL-routed (refresh/back work).
-- **Settings** — choose **Local · Ollama** vs **Cloud · Gemini** and supply your own key (BYOK); the footer shows the active provider and its privacy posture.
+A medieval/gothic operator console — carved-stone panels, hand-inked icons, a layered stone backdrop, and a collapsible sidebar:
+
+- **Command** — an at-a-glance overview: a stained-glass **stat façade** (patrols run / targets watched / reports drafted), a **severity rollup**, a **Threats sighted** breakdown by vulnerability class, and **The Scriptorium** — a 7-day **candle chart** of AI reports that splits by provider (Ollama burns blue, Gemini orange, side by side on days with both) alongside the most-used model and its share.
+- **Siege Log** — the scan form (passive/active toggle + an explicit **consent gate** for active scans) above the full scan table (status, severity chips, delete, pagination).
+- **Battle Report** — raw findings beside an animated **AI analysis** panel; analysis runs non-blocking, exports to **PDF**, and the view is URL-routed (refresh/back work).
+- **Counsel** — choose **Local · Ollama** vs **Cloud · Gemini** and supply your own key (BYOK); the sidebar footer shows the active provider and its privacy posture.
 
 </details>
 
@@ -311,7 +316,9 @@ Fortify/
 │   ├── Dockerfile
 │   └── src/
 │       ├── App.jsx              # Layout, shared state, hash routing
-│       └── components/          # Sidebar, ScanForm, SiegeLog, BattleReport, Settings
+│       ├── index.css            # Tailwind theme tokens + carved-stone material
+│       └── components/          # Sidebar, Overview (Command), StainedGlassFacade,
+│                                #   ScanForm, SiegeLog, BattleReport, Settings (Counsel), icons/
 ├── requirements.txt
 ├── LICENSE
 └── README.md
@@ -332,8 +339,9 @@ Fortify is built in phases. This table reflects the **actual** current state.
 | **3 — AI Analyzer** | Grounded LLM risk scoring & remediation (Ollama + Gemini) | ✅ Done |
 | **4 — Dashboard** | Command, Battle Report, Settings (BYOK) | ✅ Done |
 | **5 — Polish** | Docker, PDF export, hardening (unguessable IDs, non-blocking analysis, URL routing), demo | ✅ Done |
+| **6 — Keep UI** (v1.2.0) | Gothic console: Command overview dashboard, stained-glass façade, Scriptorium (per-provider AI-report chart), Siege Log / Counsel split, collapsible sidebar | ✅ Done |
 
-See the [open issues](https://github.com/Givemeboga/Fortify/issues) for what's next (deeper scanner coverage, notifications, scale).
+See the [open issues](https://github.com/Givemeboga/Fortify/issues) for what's next (deeper scanner coverage, auto-analyze, notifications, scale).
 
 ---
 
