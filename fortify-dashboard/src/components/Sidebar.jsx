@@ -6,6 +6,7 @@ import { Icon } from './icons/Icons'
 const OPERATIONS = [
   { label: "Command", view: "command", icon: "i-keep" },
   { label: "Siege Log", view: "log", icon: "i-swords" },
+  { label: "Watch", view: "watch", icon: "i-hourglass" },
 ]
 const COUNSEL = [
   { label: "Counsel", view: "settings", icon: "i-tome" },
@@ -102,15 +103,20 @@ function Sidebar({ view, onNavigate, provider }) {
       {/* footer — active provider (hidden when collapsed) */}
       {!collapsed && (
         <div className="border-t border-border font-mono text-muted" style={{ padding: "14px 16px", lineHeight: 1.7, fontSize: 11 }}>
-          {provider === "gemini" ? (
-            <>
-              <div className="flex items-center gap-2"><Icon id="i-lantern" size={13} className="text-med" />gemini · cloud</div>
-              <div>google api · data leaves</div>
-            </>
-          ) : (
+          {provider === "ollama" ? (
             <>
               <div className="flex items-center gap-2"><Icon id="i-lantern" size={13} className="text-low" />ollama · llama3.1:8b</div>
               <div>127.0.0.1:11434 · nothing leaves</div>
+            </>
+          ) : provider === "custom" ? (
+            <>
+              <div className="flex items-center gap-2"><Icon id="i-lantern" size={13} className="text-med" />custom endpoint</div>
+              <div>privacy depends on endpoint</div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2"><Icon id="i-lantern" size={13} className="text-med" />{provider} · cloud</div>
+              <div>api key · data leaves</div>
             </>
           )}
         </div>

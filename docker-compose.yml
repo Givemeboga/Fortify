@@ -2,24 +2,46 @@ services:
   backend:
     build:
       context: .
-      dockerfile: fortify-backend/Dockerfile
+      dockerfile: fortify-backend-go/Dockerfile
     ports:
       - "8500:8500"
     environment:
+      # Host Ollama for local runs. In the cloud (no Ollama), leave it —
+      # cloud providers (Gemini/OpenAI/Anthropic/custom) don't need it.
       - OLLAMA_URL=http://host.docker.internal:11434/api/generate
-      - FORTIFY_DB_PATH=/app/data/fortify.db      # ← DB goes in the mounted dir
+      - FORTIFY_DB_PATH=/app/data/fortify.db
     volumes:
-      - fortify-data:/app/data                    # ← named volume mounted at /app/data
+      - fortify-data:/app/data
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8500/healthz"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
 
   frontend:
     build:
       context: ./fortify-dashboard
+      args:
+        # The browser calls this URL, so in the cloud it must be the
+        # backend's PUBLIC address (e.g. https://api.example.com).
+        # Copy .env.example to .env to set it without editing this file.
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8500}
     ports:
       - "5173:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
 
 volumes:
-  fortify-data:                                   # ← declares the named volume
+  fortify-data:

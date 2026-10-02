@@ -1,18 +1,20 @@
 import { useState } from 'react'
 import { Icon } from './icons/Icons'
+import { api } from '../api'
 
 function ScanForm({ onScanStarted }) {
   const [url, setUrl] = useState("")
   const [scanType, setScanType] = useState("passive")
   const [consent, setConsent] = useState(false)
+  const [ports, setPorts] = useState("none")
 
   async function handleScan() {
     if (!url) return
     if (scanType === "active" && !consent) return
-    const res = await fetch("http://localhost:8500/scan", {
+    const res = await fetch(api("/scan"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url, scan_type: scanType }),
+      body: JSON.stringify({ url, scan_type: scanType, ports }),
     })
     if (!res.ok) return
     await res.json()
@@ -67,6 +69,26 @@ function ScanForm({ onScanStarted }) {
       <div className="flex" style={{ gap: 10 }}>
         <Mode value="passive" icon="i-lantern" label="PASSIVE · THE WATCH" tone="#2FA4FF" />
         <Mode value="active" icon="i-swords" label="ACTIVE · THE SIEGE" tone="#F97316" />
+      </div>
+
+      {/* port-scan profile — host-level TCP probe, runs alongside the web checks */}
+      <div className="flex items-center" style={{ gap: 10 }}>
+        <span className="font-mono text-muted" style={{ fontSize: 11, letterSpacing: ".14em" }}>PORTS</span>
+        {[["none", "NONE"], ["top100", "TOP 100"], ["top1000", "TOP 1000"], ["full", "FULL"]].map(([v, label]) => (
+          <button
+            key={v}
+            onClick={() => setPorts(v)}
+            className="font-mono"
+            style={{
+              height: 30, padding: "0 14px", borderRadius: 2, fontSize: 11, letterSpacing: ".1em",
+              ...(ports === v
+                ? { backgroundColor: "#A78BFA", color: "#0A0E16", border: "1px solid #A78BFA" }
+                : { backgroundColor: "#131A28", color: "#EAF1F8", border: "1px solid rgba(130,160,210,.22)" }),
+            }}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* consent gate — only when active is selected */}
