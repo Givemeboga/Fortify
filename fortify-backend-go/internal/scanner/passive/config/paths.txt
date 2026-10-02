@@ -1,0 +1,10 @@
+/admin
+/administrator
+/.env
+/config.php
+/.git/
+/backup
+/db_backup.sql
+/phpinfo.php
+/info.php
+/robots.txt

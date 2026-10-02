@@ -3,6 +3,7 @@ import Panel from './Panel'
 import SeverityStrip from './SeverityStrip'
 import { Icon } from './icons/Icons'
 import { GateLoader, QuillWriter } from './StateGraphics'
+import { api } from '../api'
 
 const SEV_ICON = { critical: "i-sev-crit", high: "i-sev-high", medium: "i-sev-med", low: "i-sev-low" }
 
@@ -34,10 +35,15 @@ function useTypewriter(text, speed = 10) {
 
 function BattleReport({ scanId, onBack }) {
   const [scan, setScan] = useState(null)
+  const [diff, setDiff] = useState(null)
 
   async function loadScan() {
-    const res = await fetch(`http://localhost:8500/scans/${scanId}`)
+    const res = await fetch(api(`/scans/${scanId}`))
     setScan(await res.json())
+    try {
+      const dres = await fetch(api(`/scans/${scanId}/diff`))
+      if (dres.ok) setDiff(await dres.json())
+    } catch { /* diff is best-effort */ }
   }
 
   useEffect(() => { loadScan() }, [scanId])
@@ -53,12 +59,16 @@ function BattleReport({ scanId, onBack }) {
 
   async function handleAnalyze() {
     const provider = localStorage.getItem("fortify_provider") || "ollama"
-    const apiKey = localStorage.getItem("fortify_gemini_key") || ""
+    const apiKey = localStorage.getItem(`fortify_key_${provider}`)
+      || (provider === "gemini" ? localStorage.getItem("fortify_gemini_key") : null) // legacy storage
+      || ""
+    const model = localStorage.getItem(`fortify_model_${provider}`) || ""
+    const baseURL = provider === "custom" ? localStorage.getItem("fortify_base_url") || "" : ""
 
-    const res = await fetch(`http://localhost:8500/scans/${scanId}/analyze`, {
+    const res = await fetch(api(`/scans/${scanId}/analyze`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ provider, api_key: apiKey }),
+      body: JSON.stringify({ provider, api_key: apiKey, model, base_url: baseURL }),
     })
     if (!res.ok) { alert(`Analysis failed to start (${res.status})`); return }
 
@@ -92,6 +102,15 @@ function BattleReport({ scanId, onBack }) {
         <span className="font-mono text-sm text-muted">{scan.target_url}</span>
       </div>
       <div className="font-mono text-xs text-muted mt-1">{scan.scan_type} · {scan.status}</div>
+      {/* change detection — what moved since the previous scan of this target */}
+      {diff && ((diff.added || []).length > 0 || (diff.removed || []).length > 0) && (
+        <Panel title="Since previous scan">
+          <div className="font-mono text-xs space-y-1">
+            {(diff.added || []).map((s) => <div key={`a-${s}`} className="text-high">+ {s}</div>)}
+            {(diff.removed || []).map((s) => <div key={`r-${s}`} className="text-low">− {s}</div>)}
+          </div>
+        </Panel>
+      )}
       {/* print-only: timestamp + branding for the exported report */}
       <div className="hidden print:block font-mono text-xs text-faint mt-1">
         Generated {new Date().toLocaleString()} · Fortify
@@ -175,6 +194,95 @@ function BattleReport({ scanId, onBack }) {
                       })
                     : <div className="text-low">none</div>}
                 </div>
+              </div>
+            </Panel>
+          )}
+
+          {results.ports && (
+            <Panel title="Open ports">
+              <div className="font-mono text-xs space-y-2">
+                <div className="text-faint break-all">{results.ports.host} → {(results.ports.ips || []).join(", ") || "unresolved"}</div>
+                <div className="text-faint">{results.ports.profile} · {results.ports.ports_scanned} probed{results.ports.duration_ms != null ? ` · ${(results.ports.duration_ms / 1000).toFixed(1)}s` : ""}</div>
+                {results.ports.error && <div className="text-high">{results.ports.error}</div>}
+                {(results.ports.hosts || []).map((h) => (
+                  <div key={h.ip}>
+                    <div className="text-muted">{h.ip}</div>
+                    {(h.open_ports || []).length ? h.open_ports.map((p) => (
+                      <div key={p.port} className="break-all">
+                        <span className="text-high">· {p.port}/tcp ({p.service})</span>
+                        {p.banner && <span className="text-muted"> — {p.banner.slice(0, 80)}</span>}
+                      </div>
+                    )) : <div className="text-low">no open ports</div>}
+                  </div>
+                ))}
+              </div>
+            </Panel>
+          )}
+
+          {results.cookies && (results.cookies.cookies || []).length > 0 && (
+            <Panel title="Cookies">
+              <div className="font-mono text-xs space-y-1">
+                {(results.cookies.cookies || []).map((c) => {
+                  const flags = [
+                    c.secure ? null : "no Secure",
+                    c.http_only ? null : "no HttpOnly",
+                    c.same_site ? null : "no SameSite",
+                  ].filter(Boolean)
+                  return (
+                    <div key={c.name} className="break-all">
+                      <span className="text-muted">· {c.name}</span>
+                      {c.same_site && <span className="text-faint"> [{c.same_site}]</span>}
+                      {flags.length > 0 && <span className="text-high"> — {flags.join(", ")}</span>}
+                    </div>
+                  )
+                })}
+              </div>
+            </Panel>
+          )}
+
+          {results.cors && (
+            <Panel title="CORS">
+              <div className="font-mono text-xs space-y-1">
+                <div>allow-origin: <span className="text-text break-all">{results.cors.allow_origin || "—"}</span></div>
+                <div>credentials: <span className={results.cors.allow_credentials ? "text-high" : "text-low"}>{String(results.cors.allow_credentials)}</span></div>
+                <div className={results.cors.misconfigured ? "text-crit" : "text-low"}>
+                  {results.cors.misconfigured ? "MISCONFIGURED" : "ok"}
+                </div>
+                {results.cors.detail && <div className="text-muted">{results.cors.detail}</div>}
+              </div>
+            </Panel>
+          )}
+
+          {results.methods && (results.methods.allowed || []).length > 0 && (
+            <Panel title="HTTP methods">
+              <div className="font-mono text-xs space-y-1">
+                <div className="text-muted break-all">{(results.methods.allowed || []).join(" · ")}</div>
+                {(results.methods.risky || []).length > 0 && (
+                  <div className="text-high">risky: {(results.methods.risky || []).join(", ")}</div>
+                )}
+              </div>
+            </Panel>
+          )}
+
+          {results.security_txt && (
+            <Panel title="security.txt">
+              <div className="font-mono text-xs space-y-1">
+                <div className={results.security_txt.present ? "text-low" : "text-med"}>
+                  {results.security_txt.present ? "present with Contact" : "missing"}
+                </div>
+              </div>
+            </Panel>
+          )}
+
+          {results.secrets && (results.secrets.findings || []).length > 0 && (
+            <Panel title="Exposed secrets">
+              <div className="font-mono text-xs space-y-1">
+                {(results.secrets.findings || []).map((f, i) => (
+                  <div key={i} className="break-all">
+                    <span className="text-crit">· {f.kind}</span>
+                    <span className="text-muted"> in {f.location} — {f.preview}</span>
+                  </div>
+                ))}
               </div>
             </Panel>
           )}

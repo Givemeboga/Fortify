@@ -1,11 +1,6 @@
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+# Secrets — never commit keys or local overrides (.env.example documents them)
 *.env
-*.venv
-fortify-venv/
+!.env.example
 
 # VS Code
 .vscode/
@@ -14,11 +9,10 @@ fortify-venv/
 node_modules/
 dist/
 
+# Go backend build output
+fortify-backend-go/fortify-go
+fortify-backend-go/fortify-go.exe
+fortify-backend-go/.env
+
 #Database
 *.db
-
-#Virtual environment
-venv/dev_target.py
-
-# Local dev vulnerable test target (not shipped)
-dev_target.py

@@ -1,0 +1,12 @@
+SQL syntax
+mysql_fetch
+you have an error in your sql syntax
+unclosed quotation mark
+quoted string not properly terminated
+pg_query
+psql:
+sqlite3.OperationalError
+ORA-01756
+Microsoft OLE DB Provider for SQL Server
+Warning: mysqli
+SQLSTATE
