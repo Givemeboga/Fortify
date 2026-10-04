@@ -1,0 +1,66 @@
+name: Bug report
+description: Something in Fortify isn't working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ⚠️ **Found a security vulnerability in Fortify itself?** Don't post it here —
+        report it privately via the [Security Policy](../../security/policy).
+  - type: textarea
+    id: what
+    attributes:
+      label: Describe the bug
+      description: A clear description of what's wrong.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Fortify version / commit
+      placeholder: e.g. v1.2.0 or commit sha
+    validations:
+      required: true
+  - type: dropdown
+    id: run-mode
+    attributes:
+      label: Running via
+      options:
+        - Docker
+        - Local (Python + Node)
+    validations:
+      required: true
+  - type: dropdown
+    id: provider
+    attributes:
+      label: AI provider (if relevant)
+      options:
+        - Not applicable
+        - Ollama (local)
+        - Gemini (cloud)
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: e.g. Windows 11, macOS 14, Ubuntu 22.04
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots
+      description: Relevant backend output or browser-console errors.
+      render: shell

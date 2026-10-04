@@ -1,0 +1,40 @@
+name: Feature request
+description: Suggest an idea or enhancement for Fortify
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What are you trying to do, and what's missing or painful today?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What you'd like to see.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Scanner (passive / active checks)
+        - AI Analyzer
+        - Dashboard (UI)
+        - Backend / API
+        - Infrastructure / deployment
+        - Other
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: >
+        Scope, mockups, links. For analyzer changes, keep Fortify's trust model in mind —
+        severity is scored in code and the LLM only explains (it never scores or invents findings).
