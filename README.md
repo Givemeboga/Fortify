@@ -55,26 +55,30 @@
 
 ## Screenshots
 
-The operator console, running live against the scanner and AI Analyzer.
+The gothic "Keep" console (v1.2.0), running live against the scanner and AI Analyzer.
 
-> ℹ️ The shots below are from the v1.1 console. **v1.2.0 introduces the gothic "Keep" redesign** — a Command overview dashboard, the Scriptorium, and the Siege Log / Counsel split described under [How It Works](#how-it-works). Refreshed screenshots are on the way.
-
-**Command** — launch a scan and watch the live Siege Log.
+**Command** — an at-a-glance overview: the stained-glass stat façade, a severity rollup, Threats sighted, and **The Scriptorium** (per-provider AI-report chart).
 
 <p align="center">
-  <img src="assets/shot-command.png" alt="Command view — scan form and Siege Log" width="90%" />
+  <img src="assets/shot-command.png" alt="Command — stained-glass stat façade, severity rollup, and the Scriptorium" width="90%" />
 </p>
 
-**Battle Report** — raw findings (TLS, headers, sensitive paths) beside a grounded **AI risk analysis** (risk badge, per-finding severity, prioritized fixes).
+**Siege Log** — launch a passive/active scan (consent-gated) and browse the full scan table: status, severity chips, delete, pagination.
 
 <p align="center">
-  <img src="assets/shot-report.png" alt="Battle Report — findings and AI analysis" width="90%" />
+  <img src="assets/shot-siegelog.png" alt="Siege Log — scan form and the scan table" width="90%" />
 </p>
 
-**Settings (BYOK)** — run analysis on a **local model (Ollama)** so nothing leaves your machine, or bring your own **Gemini** key for cloud analysis.
+**Battle Report** — raw findings (TLS, headers, sensitive paths, injections) beside a grounded **AI risk analysis** (risk badge, per-finding severity, prioritized fixes).
 
 <p align="center">
-  <img src="assets/shot-settings.png" alt="Settings — provider toggle and API key (BYOK)" width="90%" />
+  <img src="assets/shot-report.png" alt="Battle Report — raw findings and AI analysis" width="90%" />
+</p>
+
+**Counsel (BYOK)** — run analysis on a **local model (Ollama)** so nothing leaves your machine, or bring your own **Gemini** key for cloud analysis.
+
+<p align="center">
+  <img src="assets/shot-settings.png" alt="Counsel — provider choice (Ollama / Gemini) and BYOK" width="90%" />
 </p>
 
 **Export PDF** — save any Battle Report as a clean, shareable document.
