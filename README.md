@@ -20,6 +20,8 @@
   <img src="assets/landing-hero.png" alt="Fortify — hold the wall" width="100%" />
 </p>
 
+> 🚧 **Migrating to Go.** Fortify's backend is being ported from Python (FastAPI) to **Go** — for single-binary distribution, stronger scan concurrency, and a cloud-ready foundation. The Python backend (**v1.2.0**) is the current, stable release; the Go rewrite is landing **incrementally and parity-first** on a dedicated branch.
+
 ---
 
 ## Table of Contents
@@ -340,6 +342,7 @@ Fortify is built in phases. This table reflects the **actual** current state.
 | **4 — Dashboard** | Command, Battle Report, Settings (BYOK) | ✅ Done |
 | **5 — Polish** | Docker, PDF export, hardening (unguessable IDs, non-blocking analysis, URL routing), demo | ✅ Done |
 | **6 — Keep UI** (v1.2.0) | Gothic console: Command overview dashboard, stained-glass façade, Scriptorium (per-provider AI-report chart), Siege Log / Counsel split, collapsible sidebar | ✅ Done |
+| **7 — Go backend** | Port the backend from Python/FastAPI to **Go** (parity-first), for single-binary distribution + a cloud-ready base | 🚧 In progress |
 
 See the [open issues](https://github.com/Givemeboga/Fortify/issues) for what's next (deeper scanner coverage, auto-analyze, notifications, scale).
 
