@@ -1,8 +1,9 @@
 import { Icon } from './icons/Icons'
 import StainedGlassFacade from './StainedGlassFacade'
 
-// Provider accent (matches the sidebar/toggle/card convention): ollama azure, gemini orange.
-const PROVIDER_COLOR = { ollama: "#2FA4FF", gemini: "#F97316" }
+// Provider accent (matches the sidebar/toggle/card convention): local azure,
+// cloud orange, custom violet. Unknown providers fall back to azure.
+const PROVIDER_COLOR = { ollama: "#2FA4FF", gemini: "#F97316", openai: "#F97316", anthropic: "#F97316", custom: "#A78BFA" }
 const providerColor = (p) => PROVIDER_COLOR[p] || "#2FA4FF"
 
 /* ── data helpers ─────────────────────────────────────────────────────────── */
@@ -15,13 +16,17 @@ const SEV = [
 ]
 const SEV_BY = Object.fromEntries(SEV.map((s) => [s.key, s]))
 
-// Vulnerability rows (Command spec icons): vial / scroll / ladder / key / banner.
+// Vulnerability rows (Command spec icons): vial / scroll / ladder / key / banner / postern.
 const THREATS = [
   { key: "sqli",      name: "SQL Injection",        icon: "i-vial",   test: (r) => r.sqli?.vulnerable || r.sqli_boolean?.vulnerable },
   { key: "xss",       name: "Cross-Site Scripting", icon: "i-scroll", test: (r) => r.xss?.vulnerable },
   { key: "traversal", name: "Path Traversal",       icon: "i-ladder", test: (r) => r.path_traversal?.vulnerable },
   { key: "tls",       name: "Weak TLS",             icon: "i-key",    test: (r) => r.tls && (r.tls.cert_valid === false || r.tls.cert_expired === true) },
   { key: "headers",   name: "Missing Headers",      icon: "i-banner", test: (r) => (r.headers?.missing_headers?.length || 0) > 0 },
+  { key: "ports",     name: "Open Ports",           icon: "i-postern", test: (r) => (r.ports?.hosts || []).some((h) => (h.open_ports || []).length > 0) },
+  { key: "cookies",   name: "Cookie Flags",         icon: "i-seal", test: (r) => ((r.cookies?.missing_secure || []).length + (r.cookies?.missing_httponly || []).length + (r.cookies?.missing_samesite || []).length) > 0 },
+  { key: "cors",      name: "CORS Misconfig",       icon: "i-ward", test: (r) => r.cors?.misconfigured === true },
+  { key: "secrets",   name: "Exposed Secrets",      icon: "i-seal-crack", test: (r) => (r.secrets?.findings || []).length > 0 },
 ]
 
 function severityCounts(scans) {
@@ -199,13 +204,15 @@ export default function Overview({ scans, onSelect, onViewAll }) {
               <div className="flex-1 flex flex-col">
                 <div style={{ height: 120, display: "flex", alignItems: "flex-end", padding: "0 8px" }}>
                   {days.map((d) => {
-                    const present = ["ollama", "gemini"].filter((p) => (d.providers[p] || 0) > 0)
+                    // one candle per provider active that day (ollama first), not a fixed pair
+                    const present = Object.keys(d.providers).filter((p) => (d.providers[p] || 0) > 0)
+                      .sort((a, b) => (a === "ollama" ? -1 : b === "ollama" ? 1 : a.localeCompare(b)))
                     const list = present.length ? present : ["empty"]
                     return (
                       <div key={d.key} style={{ flex: 1, display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 3 }}>
                         {list.map((p) => {
                           const b = candle(p === "empty" ? 0 : d.providers[p], maxDay)
-                          const c = p === "gemini" ? "#F97316" : "#2FA4FF"
+                          const c = p === "empty" ? "#2FA4FF" : providerColor(p)
                           const glowId = p === "gemini" ? "cd-glow-amber" : "cd-glow"
                           return (
                             <svg key={p} width="22" height="120" viewBox="0 0 22 120" style={{ overflow: "visible" }}>

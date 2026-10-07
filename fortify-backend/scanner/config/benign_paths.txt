@@ -1,4 +1,0 @@
-# Paths that are public by design — presence alone is not a finding
-/robots.txt
-/sitemap.xml
-/favicon.ico

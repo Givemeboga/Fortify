@@ -3,10 +3,12 @@ import Sidebar from './components/Sidebar'
 import Settings from './components/Settings'
 import ScanForm from './components/ScanForm'
 import SiegeLog from './components/SiegeLog'
+import Schedules from './components/Schedules'
 import BattleReport from './components/BattleReport'
 import Overview from './components/Overview'
 import IconSprite from './components/icons/IconSprite'
 import Toast from './components/Toast'
+import { api } from './api'
 
 function useHashRoute() {
   const [hash, setHash] = useState(window.location.hash || "#/")
@@ -25,6 +27,8 @@ function App() {
   let selectedScanId = null                     // default: no scan selected
   if (hash === "#/settings") {
     view = "settings"
+  } else if (hash === "#/watch") {
+    view = "watch"
   } else if (hash.startsWith("#/scans/")) {
     view = "battle-report"
     selectedScanId = hash.slice("#/scans/".length)  // extract the scan ID from the hash
@@ -45,7 +49,7 @@ function App() {
 
   // fetch all scans from the backend
   async function loadScans() {
-    const res = await fetch("http://localhost:8500/scans")
+    const res = await fetch(api("/scans"))
     const data = await res.json()
     const fresh = []
     for (const s of data) {
@@ -80,7 +84,7 @@ function App() {
   }
 
 async function handleDelete(id) {
-  await fetch(`http://localhost:8500/scans/${id}`, { method: "DELETE" })
+  await fetch(api(`/scans/${id}`), { method: "DELETE" })
   loadScans()   // refresh the list after deleting
 }
 
@@ -98,7 +102,7 @@ useEffect(() => {
     <div className="relative flex min-h-screen page-stone text-text">
       <Sidebar
         view={view}
-        onNavigate={(v) => navigate(v === "settings" ? "#/settings" : v === "log" ? "#/scans" : "#/")}
+        onNavigate={(v) => navigate(v === "settings" ? "#/settings" : v === "log" ? "#/scans" : v === "watch" ? "#/watch" : "#/")}
         provider={provider}
       />
       <main className="flex-1 min-w-0 flex flex-col" style={{ padding: "36px 40px 48px", gap: 28 }}>
@@ -106,6 +110,8 @@ useEffect(() => {
           <Settings onProviderSaved={setProvider} />
         ) : view === "battle-report" ? (
           <BattleReport scanId={selectedScanId} onBack={() => navigate("#/scans")} />
+        ) : view === "watch" ? (
+          <Schedules />
         ) : view === "log" ? (
           <>
             <div className="flex flex-col gap-2">
