@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { api } from '../api'
+import { apiFetch } from '../api'
 
 const INTERVALS = [
   [60, "EVERY HOUR"],
@@ -28,11 +28,15 @@ function Schedules() {
   const [url, setUrl] = useState("")
   const [scanType, setScanType] = useState("passive")
   const [ports, setPorts] = useState("none")
-  const [interval, setInterval] = useState(1440)
+  // NOTE: named intervalMin — `interval`/`setInterval` would shadow the
+  // browser timer used for polling below (review bug: polling died and the
+  // create form sent interval_minutes as an object).
+  const [intervalMin, setIntervalMin] = useState(1440)
   const [autoAnalyze, setAutoAnalyze] = useState(false)
+  const [createError, setCreateError] = useState("")
 
   async function load() {
-    const res = await fetch(api("/schedules"))
+    const res = await apiFetch("/schedules")
     setSchedules(await res.json())
   }
   useEffect(() => {
@@ -43,22 +47,31 @@ function Schedules() {
 
   async function create() {
     if (!url) return
+    setCreateError("")
     const provider = localStorage.getItem("fortify_provider") || "ollama"
-    const res = await fetch(api("/schedules"), {
+    const res = await apiFetch("/schedules", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         url, scan_type: scanType, ports,
-        interval_minutes: interval, auto_analyze: autoAnalyze, provider,
+        interval_minutes: intervalMin, auto_analyze: autoAnalyze, provider,
       }),
     })
-    if (!res.ok) return
+    if (!res.ok) {
+      try {
+        const err = await res.json()
+        setCreateError(err.detail || `server rejected the watch (${res.status})`)
+      } catch {
+        setCreateError(`server rejected the watch (${res.status})`)
+      }
+      return
+    }
     setUrl("")
     load()
   }
 
   async function toggle(s) {
-    await fetch(api(`/schedules/${s.id}`), {
+    await apiFetch(`/schedules/${s.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ enabled: !s.enabled }),
@@ -67,7 +80,7 @@ function Schedules() {
   }
 
   async function remove(id) {
-    await fetch(api(`/schedules/${id}`), { method: "DELETE" })
+    await apiFetch(`/schedules/${id}`, { method: "DELETE" })
     load()
   }
 
@@ -116,10 +129,10 @@ function Schedules() {
         </div>
         <div className="flex items-center" style={{ gap: 10 }}>
           {INTERVALS.map(([v, label]) => (
-            <button key={v} onClick={() => setInterval(v)} className="font-mono"
+            <button key={v} onClick={() => setIntervalMin(v)} className="font-mono"
               style={{
                 height: 30, padding: "0 14px", borderRadius: 2, fontSize: 11, letterSpacing: ".1em",
-                ...(interval === v
+                ...(intervalMin === v
                   ? { backgroundColor: "#F5C518", color: "#0A0E16", border: "1px solid #F5C518" }
                   : { backgroundColor: "#131A28", color: "#EAF1F8", border: "1px solid rgba(130,160,210,.22)" }),
               }}>{label}</button>
@@ -129,6 +142,11 @@ function Schedules() {
           <input type="checkbox" checked={autoAnalyze} onChange={(e) => setAutoAnalyze(e.target.checked)} />
           Auto-analyze each run with the Counsel provider
         </label>
+        <div className="font-mono text-faint" style={{ fontSize: 11, lineHeight: 1.6 }}>
+          Scheduled runs execute on the server — they use server-side keys (.env), never the keys
+          stored in this browser. Cloud auto-analysis needs the key on the server.
+        </div>
+        {createError && <div className="font-mono text-crit" style={{ fontSize: 12 }}>{createError}</div>}
         <div>
           <button onClick={create} className="btn-primary flex items-center" style={{ height: 46, padding: "0 28px", fontSize: 15 }}>
             Start watch

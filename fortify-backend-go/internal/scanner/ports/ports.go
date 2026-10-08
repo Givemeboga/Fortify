@@ -15,6 +15,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"fortify-go/internal/safe"
 )
 
 const (
@@ -331,11 +333,17 @@ func ScanPorts(ip string, ports []int) []OpenPort {
 		go func() {
 			defer wg.Done()
 			for p := range jobs {
-				if found, ok := probe(ip, p); ok {
-					mu.Lock()
-					open = append(open, found)
-					mu.Unlock()
-				}
+				func(port int) {
+					defer func() {
+						// A panicking probe skips its port, never the pool.
+						_ = recover()
+					}()
+					if found, ok := probe(ip, port); ok {
+						mu.Lock()
+						open = append(open, found)
+						mu.Unlock()
+					}
+				}(p)
 			}
 		}()
 	}
@@ -361,13 +369,15 @@ func ScanHost(rawURL, profile string) Result {
 		wg.Add(1)
 		go func(target string) {
 			defer wg.Done()
-			open := ScanPorts(target, ports)
-			if open == nil {
-				open = []OpenPort{}
-			}
-			mu.Lock()
-			hosts = append(hosts, HostResult{IP: target, OpenPorts: open, PortsScanned: len(ports)})
-			mu.Unlock()
+			safe.Do(func() {
+				open := ScanPorts(target, ports)
+				if open == nil {
+					open = []OpenPort{}
+				}
+				mu.Lock()
+				hosts = append(hosts, HostResult{IP: target, OpenPorts: open, PortsScanned: len(ports)})
+				mu.Unlock()
+			})
 		}(ip)
 	}
 	wg.Wait()

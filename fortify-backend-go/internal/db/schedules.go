@@ -70,6 +70,10 @@ func scheduleFromRow(id, targetURL, scanType, ports string, interval, autoAnalyz
 func GetSchedule(id string) (*Schedule, error) {
 	mu.Lock()
 	defer mu.Unlock()
+	return getScheduleLocked(id)
+}
+
+func getScheduleLocked(id string) (*Schedule, error) {
 	var sid, url, stype, ports, provider, model, created, next string
 	var interval, auto, enabled int
 	var last sql.NullString
@@ -152,9 +156,8 @@ func UpdateSchedule(id string, enabled *bool, intervalMinutes *int) (*Schedule, 
 	mu.Lock()
 	defer mu.Unlock()
 	var curEnabled, curInterval int
-	var last sql.NullString
-	err := conn.QueryRow(`SELECT enabled, interval_minutes, last_run_at FROM schedules WHERE id = ?`, id).
-		Scan(&curEnabled, &curInterval, &last)
+	err := conn.QueryRow(`SELECT enabled, interval_minutes FROM schedules WHERE id = ?`, id).
+		Scan(&curEnabled, &curInterval)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -164,31 +167,24 @@ func UpdateSchedule(id string, enabled *bool, intervalMinutes *int) (*Schedule, 
 	if enabled != nil {
 		curEnabled = boolInt(*enabled)
 	}
-	next := ""
 	if intervalMinutes != nil {
 		if *intervalMinutes < 5 {
-			return nil, errInvalidInterval
+			return nil, ErrInvalidInterval
 		}
 		curInterval = *intervalMinutes
-		next = NextRun(time.Now().UTC(), curInterval)
-	}
-	if next != "" {
 		_, err = conn.Exec(`UPDATE schedules SET enabled = ?, interval_minutes = ?, next_run_at = ? WHERE id = ?`,
-			curEnabled, curInterval, next, id)
+			curEnabled, curInterval, NextRun(time.Now().UTC(), curInterval), id)
 	} else {
 		_, err = conn.Exec(`UPDATE schedules SET enabled = ? WHERE id = ?`, curEnabled, id)
 	}
 	if err != nil {
 		return nil, err
 	}
-	mu.Unlock()
-	sched, err := GetSchedule(id)
-	mu.Lock()
-	return sched, err
+	return getScheduleLocked(id)
 }
 
-// errInvalidInterval is returned for intervals under the 5-minute floor.
-var errInvalidInterval = errorString("interval_minutes must be >= 5")
+// ErrInvalidInterval is returned for intervals under the 5-minute floor.
+var ErrInvalidInterval = errorString("interval_minutes must be >= 5")
 
 type errorString string
 

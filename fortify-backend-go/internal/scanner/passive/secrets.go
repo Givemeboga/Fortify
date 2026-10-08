@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 
+	"fortify-go/internal/safe"
 	"fortify-go/internal/scanner/httpclient"
 )
 
@@ -105,6 +106,7 @@ func ScanSecrets(rawURL string) SecretsResult {
 		wg.Add(1)
 		go func(s string) {
 			defer wg.Done()
+			defer safe.Recover() // a panicking fetch is skipped, rest continue
 			r, err := httpclient.Shared.Get(s)
 			if err != nil {
 				return

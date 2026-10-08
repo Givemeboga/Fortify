@@ -151,6 +151,16 @@ docker compose up --build -d
 
 Run one compose stack per host (backend `:8500`, dashboard `:5173` mapped to host port 80/443 behind your reverse proxy), or deploy the two images separately — any host that serves the dashboard bundle and any host that runs `./fortify-go` will pair as long as `VITE_API_URL` points at the backend. Cloud LLM providers (Gemini/OpenAI/Anthropic/custom) need no Ollama; paste the key in Counsel (BYOK) or set it in the backend environment.
 
+### Hardening for shared/cloud deploys
+
+The local-dev defaults are open by design; lock them down before exposing the stack (all knobs live in `.env.example`, wired through compose):
+
+- **API token** — set `FORTIFY_API_TOKEN` and every route except `/healthz` requires `Authorization: Bearer <token>`. Paste the same token in Counsel → API TOKEN and the dashboard sends it on every call.
+- **Browser origins** — `ALLOWED_ORIGINS` (comma-separated, default `http://localhost:5173`) must include your public dashboard URL, otherwise browsers block the API calls. `"*"` allows any origin.
+- **Scan-target guard** — targets resolving to loopback, private, link-local, or multicast IPs (including cloud metadata `169.254.169.254` via DNS rebinding) are rejected with `422`. Homelabs that intentionally scan local hosts can opt out with `FORTIFY_ALLOW_PRIVATE_IPS=1`.
+- **Concurrency cap** — `FORTIFY_MAX_SCANS` (default 3) bounds simultaneous scans; extras queue instead of exhausting sockets/CPU.
+- **Key hygiene** — a request-supplied `base_url` (OpenAI/custom) only ever works with a request-supplied key; the server's keys are never sent to caller-chosen endpoints. Scheduled auto-analysis runs on the server, so it uses server-side keys only — browser BYOK keys are never exfiltrated into watches.
+
 <details>
 <summary><b>Run locally without Docker</b></summary>
 

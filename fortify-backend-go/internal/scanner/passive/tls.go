@@ -3,37 +3,67 @@ package passive
 import (
 	"crypto/tls"
 	"net"
+	"strconv"
 	"time"
 )
 
-// TLSResult mirrors Python scanner/passive/tls.py output keys.
+// TLSResult mirrors the scanner output keys. VerificationError carries the
+// handshake failure (expired, self-signed, wrong hostname, …) when the
+// certificate was inspectable but untrusted.
 type TLSResult struct {
-	TLSVersion  *string `json:"tls_version"`
-	CertExpired *bool   `json:"cert_expired"`
-	CertValid   bool    `json:"cert_valid"`
-	CipherSuite *string `json:"cipher_suite"`
+	TLSVersion        *string `json:"tls_version"`
+	CertExpired       *bool   `json:"cert_expired"`
+	CertValid         bool    `json:"cert_valid"`
+	CipherSuite       *string `json:"cipher_suite"`
+	VerificationError *string `json:"verification_error,omitempty"`
 }
 
 func strp(s string) *string { return &s }
 func boolp(b bool) *bool    { return &b }
 
-// ScanTLS opens a raw TLS connection to host:443 and reports the negotiated
-// version, cipher, and certificate validity. Any failure (plain-HTTP target,
-// closed port, timeout) yields the same null-shape the Python version
-// returns so the dashboard renders identically.
-func ScanTLS(hostname string) TLSResult {
+// ScanTLS connects to host:port and reports the negotiated version, cipher,
+// and certificate validity. A failed *verified* handshake no longer yields
+// all-nulls: a second unverified handshake inspects the real certificate, so
+// expired/self-signed/wrong-host certs are reported as findings instead of
+// vanishing. Only a truly unreachable port returns the null shape.
+func ScanTLS(hostname string, port int) TLSResult {
 	if hostname == "" {
 		return TLSResult{CertValid: false}
 	}
-	dialer := &net.Dialer{Timeout: 10 * time.Second}
-	conn, err := tls.DialWithDialer(dialer, "tcp", net.JoinHostPort(hostname, "443"), &tls.Config{
-		MinVersion: tls.VersionTLS10,
-	})
-	if err != nil {
-		return TLSResult{CertValid: false}
+	if port <= 0 {
+		port = 443
 	}
-	defer conn.Close()
+	target := net.JoinHostPort(hostname, strconv.Itoa(port))
+	dialer := &net.Dialer{Timeout: 10 * time.Second}
 
+	var verifyErr error
+	if conn, err := tls.DialWithDialer(dialer, "tcp", target, &tls.Config{
+		MinVersion: tls.VersionTLS10,
+		ServerName: hostname,
+	}); err == nil {
+		defer conn.Close()
+		return verifiedResult(conn)
+	} else {
+		verifyErr = err
+	}
+
+	// Untrusted but present: read the actual cert without verifying it.
+	if conn, err := tls.DialWithDialer(dialer, "tcp", target, &tls.Config{ //nolint:gosec // intentional: inspection only, after verified dial failed
+		MinVersion:         tls.VersionTLS10,
+		InsecureSkipVerify: true,
+	}); err == nil {
+		defer conn.Close()
+		res := verifiedResult(conn)
+		res.CertValid = false
+		msg := verifyErr.Error()
+		res.VerificationError = &msg
+		return res
+	}
+
+	return TLSResult{CertValid: false}
+}
+
+func verifiedResult(conn *tls.Conn) TLSResult {
 	state := conn.ConnectionState()
 	version := tlsVersionName(state.Version)
 	cipher := tls.CipherSuiteName(state.CipherSuite)

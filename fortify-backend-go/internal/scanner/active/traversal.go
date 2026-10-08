@@ -5,6 +5,8 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+
+	"fortify-go/internal/safe"
 )
 
 //go:embed config/traversal_payloads.txt
@@ -50,6 +52,7 @@ func ScanPathTraversal(rawURL string) TraversalResult {
 		wg.Add(1)
 		go func(p string) {
 			defer wg.Done()
+			defer safe.Recover() // a panicking param is skipped, rest continue
 			for _, payload := range traversalPayloads {
 				injected := InjectPayload(rawURL, payload)[p]
 				body, err := getBodyLower(injected)

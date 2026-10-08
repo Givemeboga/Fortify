@@ -10,6 +10,11 @@ services:
       # cloud providers (Gemini/OpenAI/Anthropic/custom) don't need it.
       - OLLAMA_URL=http://host.docker.internal:11434/api/generate
       - FORTIFY_DB_PATH=/app/data/fortify.db
+      # Hardening knobs (see .env.example; empty = dev defaults).
+      - FORTIFY_API_TOKEN=${FORTIFY_API_TOKEN:-}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173}
+      - FORTIFY_ALLOW_PRIVATE_IPS=${FORTIFY_ALLOW_PRIVATE_IPS:-}
+      - FORTIFY_MAX_SCANS=${FORTIFY_MAX_SCANS:-3}
     volumes:
       - fortify-data:/app/data
     extra_hosts:

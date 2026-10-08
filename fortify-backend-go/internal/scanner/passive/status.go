@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"fortify-go/internal/safe"
 	"fortify-go/internal/scanner/httpclient"
 )
 
@@ -91,10 +92,12 @@ func ScanPaths(base string) map[string]PathResult {
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
-			st, body, ctype := probe(base + path)
-			mu.Lock()
-			results[path] = PathResult{StatusCode: st, Exposed: isExposed(st, body, ctype)}
-			mu.Unlock()
+			safe.Do(func() {
+				st, body, ctype := probe(base + path)
+				mu.Lock()
+				results[path] = PathResult{StatusCode: st, Exposed: isExposed(st, body, ctype)}
+				mu.Unlock()
+			})
 		}(p)
 	}
 	wg.Wait()

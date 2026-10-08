@@ -26,6 +26,7 @@ const modelOf = (p) => `fortify_model_${p}`
 // persists to localStorage; the Battle Report sends it per request (BYOK).
 function Settings({ onProviderSaved }) {
   const [provider, setProvider] = useState(localStorage.getItem("fortify_provider") || "ollama")
+  const [apiToken, setApiToken] = useState(localStorage.getItem("fortify_api_token") || "")
   const [keys, setKeys] = useState(() => Object.fromEntries(
     PROVIDERS.filter((p) => p.needsKey).map((p) => {
       // migrate the pre-multi-provider gemini key storage
@@ -43,6 +44,7 @@ function Settings({ onProviderSaved }) {
 
   function save() {
     localStorage.setItem("fortify_provider", provider)
+    localStorage.setItem("fortify_api_token", apiToken)
     for (const [p, k] of Object.entries(keys)) localStorage.setItem(keyOf(p), k)
     for (const [p, m] of Object.entries(models)) localStorage.setItem(modelOf(p), m)
     localStorage.setItem("fortify_base_url", baseURL)
@@ -93,6 +95,19 @@ function Settings({ onProviderSaved }) {
       </div>
 
       <div className="flex flex-col" style={{ gap: 14 }}>
+        <div className="font-mono text-muted" style={{ fontSize: 10, letterSpacing: ".16em" }}>DASHBOARD → API ACCESS</div>
+        <div style={{ maxWidth: 772 }}>
+          <label className="font-mono text-faint block" style={{ fontSize: 10, letterSpacing: ".16em", marginBottom: 6 }}>API TOKEN (WHEN THE SERVER REQUIRES ONE)</label>
+          <input
+            type="password"
+            value={apiToken}
+            onChange={(e) => setApiToken(e.target.value)}
+            placeholder="leave blank for local dev without FORTIFY_API_TOKEN"
+            className="w-full font-mono text-text"
+            style={fieldStyle}
+          />
+        </div>
+
         <div className="font-mono text-muted" style={{ fontSize: 10, letterSpacing: ".16em" }}>AI ANALYSIS PROVIDER</div>
         <div className="grid" style={{ gridTemplateColumns: "repeat(2,380px)", gap: 12 }}>
           {PROVIDERS.map((p) => (

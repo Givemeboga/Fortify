@@ -9,6 +9,8 @@ import (
 	"fortify-go/internal/analyzer"
 	"fortify-go/internal/db"
 	"fortify-go/internal/diff"
+	"fortify-go/internal/safe"
+	"fortify-go/internal/scanner/ports"
 )
 
 type ScheduleRequest struct {
@@ -37,11 +39,15 @@ func handleCreateSchedule(w http.ResponseWriter, r *http.Request) {
 		writeDetail(w, http.StatusUnprocessableEntity, "invalid url or scan_type (want http(s) url, passive|active)")
 		return
 	}
+	if err := checkPublicHost(targetHost(target)); err != nil {
+		writeDetail(w, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
 	portProfile := req.Ports
 	if portProfile == "" {
 		portProfile = "none"
 	}
-	if portProfile != "none" && portProfile != "top100" && portProfile != "top1000" && portProfile != "full" {
+	if !ports.ValidProfile(portProfile) {
 		writeDetail(w, http.StatusUnprocessableEntity, "invalid ports profile (want none|top100|top1000|full)")
 		return
 	}
@@ -99,8 +105,12 @@ func handlePatchSchedule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sched, err := db.UpdateSchedule(r.PathValue("id"), patch.Enabled, patch.IntervalMinutes)
+	if err == db.ErrInvalidInterval {
+		writeDetail(w, http.StatusUnprocessableEntity, "interval_minutes must be >= 5")
+		return
+	}
 	if err != nil {
-		writeDetail(w, http.StatusUnprocessableEntity, err.Error())
+		writeDetail(w, http.StatusInternalServerError, "could not update schedule")
 		return
 	}
 	if sched == nil {
@@ -200,13 +210,13 @@ func handleScanDiff(w http.ResponseWriter, r *http.Request) {
 func StartScheduler(stop <-chan struct{}) {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
-	runDue() // catch up immediately on boot
+	safe.Do(runDue) // catch up immediately on boot
 	for {
 		select {
 		case <-stop:
 			return
 		case <-ticker.C:
-			runDue()
+			safe.Do(runDue)
 		}
 	}
 }
@@ -229,7 +239,7 @@ func runDue() {
 			log.Printf("[scheduler] mark run failed for %s: %v", s.ID, err)
 		}
 		log.Printf("[scheduler] firing %s → scan %s (%s)", s.ID, scanID, s.TargetURL)
-		go runScheduled(s, scanID)
+		safe.Go(func() { runScheduled(s, scanID) })
 	}
 }
 
@@ -250,7 +260,9 @@ func runScheduled(s *db.Schedule, scanID string) {
 		}
 		if scan.Status == "completed" {
 			_ = db.SetAnalysisStatus(scanID, "analyzing")
-			go runAnalysis(scanID, analyzer.LLMOptions{Provider: s.Provider, Model: s.Model})
+			safe.Go(func() {
+				runAnalysis(scanID, analyzer.LLMOptions{Provider: s.Provider, Model: s.Model})
+			})
 			return
 		}
 		if scan.Status == "failed" {

@@ -65,6 +65,7 @@ CONFIRMED FINDINGS (JSON):
 %s
 
 TASK — for every finding, produce:
+- "id": echo the finding's "id" from the input EXACTLY (so scores stay attached to the right finding even if you reorder).
 - "vulnerability": a short, specific name for the issue.
 - "explanation": 1-2 sentences on what the weakness is and the concrete risk it creates for THIS application; reference the exact parameter/header/path from the finding. No filler.
 - "remediation": a specific, actionable fix — name the exact header and value, config directive, query change, or code pattern. Never write vague advice like "sanitize input" or "follow best practices".
@@ -82,7 +83,7 @@ Respond in EXACTLY this structure:
 {
   "summary": "<2-3 sentences>",
   "findings": [
-    { "vulnerability": "...", "explanation": "...", "remediation": "..." }
+    { "id": "<echoed input id>", "vulnerability": "...", "explanation": "...", "remediation": "..." }
   ],
   "priority_order": ["...", "..."]
 }`, string(raw))
@@ -108,8 +109,14 @@ func Analyze(results map[string]any, opts LLMOptions) (map[string]any, error) {
 	}
 
 	scores := make([]int, len(findings))
+	byID := make(map[string]int, len(findings))
 	for i, f := range findings {
 		scores[i] = ScoreFinding(f)
+		// Stable ID echoed by the model, so scores attach by identity even
+		// when the LLM reorders, merges, or drops findings.
+		id := fmt.Sprintf("F%d", i+1)
+		f["id"] = id
+		byID[id] = scores[i]
 	}
 
 	raw, err := GetLLMResponse(BuildPrompt(findings), opts)
@@ -122,15 +129,7 @@ func Analyze(results map[string]any, opts LLMOptions) (map[string]any, error) {
 	}
 
 	if list, ok := assessment["findings"].([]any); ok {
-		for i, item := range list {
-			score := 30
-			if i < len(scores) {
-				score = scores[i]
-			}
-			if m, ok := item.(map[string]any); ok {
-				m["severity"] = map[string]any{"score": score, "level": ScoreToLevel(score)}
-			}
-		}
+		applyScores(list, byID, scores)
 	}
 	overall := scores[0]
 	for _, s := range scores[1:] {
@@ -143,6 +142,29 @@ func Analyze(results map[string]any, opts LLMOptions) (map[string]any, error) {
 	assessment["provider"] = prov
 	assessment["model"] = model
 	return assessment, nil
+}
+
+// applyScores stamps deterministic code scores onto the LLM's prose findings
+// by echoed finding ID, falling back to input position only when the model
+// drops the ID — a reordered or partial list can never shift scores around.
+func applyScores(items []any, byID map[string]int, ordered []int) {
+	for pos, item := range items {
+		m, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		score := 30
+		if id, ok := m["id"].(string); ok {
+			if s, found := byID[id]; found {
+				score = s
+			} else if pos < len(ordered) {
+				score = ordered[pos]
+			}
+		} else if pos < len(ordered) {
+			score = ordered[pos]
+		}
+		m["severity"] = map[string]any{"score": score, "level": ScoreToLevel(score)}
+	}
 }
 
 // isRiskyPort tolerates every JSON number shape (int from in-process maps,
