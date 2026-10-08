@@ -8,7 +8,7 @@ import BattleReport from './components/BattleReport'
 import Overview from './components/Overview'
 import IconSprite from './components/icons/IconSprite'
 import Toast from './components/Toast'
-import { api } from './api'
+import { api, apiFetch } from './api'
 
 function useHashRoute() {
   const [hash, setHash] = useState(window.location.hash || "#/")
@@ -49,7 +49,7 @@ function App() {
 
   // fetch all scans from the backend
   async function loadScans() {
-    const res = await fetch(api("/scans"))
+    const res = await apiFetch("/scans")
     const data = await res.json()
     const fresh = []
     for (const s of data) {
@@ -84,7 +84,7 @@ function App() {
   }
 
 async function handleDelete(id) {
-  await fetch(api(`/scans/${id}`), { method: "DELETE" })
+  await apiFetch(`/scans/${id}`, { method: "DELETE" })
   loadScans()   // refresh the list after deleting
 }
 

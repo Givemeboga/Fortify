@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Icon } from './icons/Icons'
-import { api } from '../api'
+import { apiFetch } from '../api'
 
 function ScanForm({ onScanStarted }) {
   const [url, setUrl] = useState("")
@@ -11,7 +11,7 @@ function ScanForm({ onScanStarted }) {
   async function handleScan() {
     if (!url) return
     if (scanType === "active" && !consent) return
-    const res = await fetch(api("/scan"), {
+    const res = await apiFetch("/scan", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url, scan_type: scanType, ports }),

@@ -7,6 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"fortify-go/internal/safe"
 	"fortify-go/internal/scanner/httpclient"
 )
 
@@ -86,6 +87,7 @@ func ScanSQLi(rawURL string) SQLiResult {
 		wg.Add(1)
 		go func(p string) {
 			defer wg.Done()
+			defer safe.Recover() // a panicking param is skipped, rest continue
 			for _, payload := range sqliPayloads {
 				injected := InjectPayload(rawURL, payload)[p]
 				body, err := getBodyLower(injected)
@@ -111,6 +113,10 @@ func ScanSQLi(rawURL string) SQLiResult {
 }
 
 // ScanSQLiBoolean: boolean-based blind SQLi (TRUE vs FALSE response diff).
+// Each TRUE condition is fetched TWICE: dynamic pages (CSRF tokens, nonces,
+// timestamps, rotating ads) vary between identical requests, and any
+// self-variation disqualifies the parameter — only a stable page that moves
+// solely with the TRUE/FALSE condition counts as vulnerable.
 func ScanSQLiBoolean(rawURL string) SQLiBooleanResult {
 	params := keysOf(InjectPayload(rawURL, "1"))
 	var findings []SQLiBooleanFinding
@@ -121,15 +127,17 @@ func ScanSQLiBoolean(rawURL string) SQLiBooleanResult {
 		wg.Add(1)
 		go func(p string) {
 			defer wg.Done()
+			defer safe.Recover() // a panicking param is skipped, rest continue
 			for _, pair := range booleanPairs {
-				trueBody, err1 := getBodyLower(InjectPayload(rawURL, pair[0])[p])
-				falseBody, err2 := getBodyLower(InjectPayload(rawURL, pair[1])[p])
-				if err1 != nil || err2 != nil {
+				trueA, err1 := getBodyLower(InjectPayload(rawURL, pair[0])[p])
+				trueB, err2 := getBodyLower(InjectPayload(rawURL, pair[0])[p])
+				falseBody, err3 := getBodyLower(InjectPayload(rawURL, pair[1])[p])
+				if err1 != nil || err2 != nil || err3 != nil {
 					errs.Add(1)
 					continue
 				}
-				made.Add(2)
-				if len(trueBody) != len(falseBody) { // _similar tolerance 0
+				made.Add(3)
+				if len(trueA) == len(trueB) && len(trueA) != len(falseBody) {
 					mu.Lock()
 					findings = append(findings, SQLiBooleanFinding{Parameter: p, TruePayload: pair[0], FalsePayload: pair[1]})
 					mu.Unlock()

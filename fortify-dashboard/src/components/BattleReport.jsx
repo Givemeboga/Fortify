@@ -3,7 +3,7 @@ import Panel from './Panel'
 import SeverityStrip from './SeverityStrip'
 import { Icon } from './icons/Icons'
 import { GateLoader, QuillWriter } from './StateGraphics'
-import { api } from '../api'
+import { apiFetch } from '../api'
 
 const SEV_ICON = { critical: "i-sev-crit", high: "i-sev-high", medium: "i-sev-med", low: "i-sev-low" }
 
@@ -38,10 +38,10 @@ function BattleReport({ scanId, onBack }) {
   const [diff, setDiff] = useState(null)
 
   async function loadScan() {
-    const res = await fetch(api(`/scans/${scanId}`))
+    const res = await apiFetch(`/scans/${scanId}`)
     setScan(await res.json())
     try {
-      const dres = await fetch(api(`/scans/${scanId}/diff`))
+      const dres = await apiFetch(`/scans/${scanId}/diff`)
       if (dres.ok) setDiff(await dres.json())
     } catch { /* diff is best-effort */ }
   }
@@ -65,7 +65,7 @@ function BattleReport({ scanId, onBack }) {
     const model = localStorage.getItem(`fortify_model_${provider}`) || ""
     const baseURL = provider === "custom" ? localStorage.getItem("fortify_base_url") || "" : ""
 
-    const res = await fetch(api(`/scans/${scanId}/analyze`), {
+    const res = await apiFetch(`/scans/${scanId}/analyze`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ provider, api_key: apiKey, model, base_url: baseURL }),

@@ -1,6 +1,6 @@
 # Fortify Go backend — multi-stage build, single static binary.
 # Pure-Go SQLite (modernc.org/sqlite): no cgo/gcc needed, builds anywhere.
-FROM golang:1-bookworm AS builder
+FROM golang:1.26-bookworm AS builder
 
 WORKDIR /src
 

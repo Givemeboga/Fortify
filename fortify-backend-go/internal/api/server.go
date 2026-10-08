@@ -14,10 +14,13 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"strconv"
 	"strings"
 
 	"fortify-go/internal/analyzer"
 	"fortify-go/internal/db"
+	"fortify-go/internal/safe"
 	"fortify-go/internal/scanner/active"
 	"fortify-go/internal/scanner/passive"
 	"fortify-go/internal/scanner/ports"
@@ -34,6 +37,19 @@ type AnalyzeRequest struct {
 	APIKey   string `json:"api_key"`
 	Model    string `json:"model"`
 	BaseURL  string `json:"base_url"`
+}
+
+// scanSlots caps concurrent scans (FORTIFY_MAX_SCANS, default 3) so a burst
+// of full port sweeps can't exhaust sockets/CPU — queued scans simply wait.
+var scanSlots = make(chan struct{}, maxScans())
+
+func maxScans() int {
+	if v := strings.TrimSpace(os.Getenv("FORTIFY_MAX_SCANS")); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n >= 1 {
+			return n
+		}
+	}
+	return 3
 }
 
 func writeJSON(w http.ResponseWriter, code int, v any) {
@@ -64,6 +80,8 @@ func validateTarget(raw, scanType string) (string, string, bool) {
 }
 
 func runAndStore(scanID, target, scanType, portProfile string) {
+	scanSlots <- struct{}{}
+	defer func() { <-scanSlots }()
 	var results map[string]any
 	var err error
 	func() {
@@ -80,15 +98,16 @@ func runAndStore(scanID, target, scanType, portProfile string) {
 		// alongside instead of adding its seconds to the total.
 		wantPorts := portProfile != "" && portProfile != ports.ProfileNone
 		ch := make(chan kv, 2)
-		go func() {
+		go safe.Send(ch, kv{"results", map[string]any{}}, func() kv {
 			if scanType == "active" {
-				ch <- kv{"results", active.RunActiveScan(target)}
-			} else {
-				ch <- kv{"results", passive.RunPassiveScan(target)}
+				return kv{"results", active.RunActiveScan(target)}
 			}
-		}()
+			return kv{"results", passive.RunPassiveScan(target)}
+		})
 		if wantPorts {
-			go func() { ch <- kv{"ports", ports.ScanHost(target, portProfile)} }()
+			go safe.Send(ch, kv{"ports", ports.Result{}}, func() kv {
+				return kv{"ports", ports.ScanHost(target, portProfile)}
+			})
 		}
 		merged := map[string]any{}
 		n := 1
@@ -150,6 +169,10 @@ func handleStartScan(w http.ResponseWriter, r *http.Request) {
 		writeDetail(w, http.StatusUnprocessableEntity, "invalid url or scan_type (want http(s) url, passive|active)")
 		return
 	}
+	if err := checkPublicHost(targetHost(target)); err != nil {
+		writeDetail(w, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
 	portProfile := req.Ports
 	if portProfile == "" {
 		portProfile = ports.ProfileNone
@@ -163,7 +186,7 @@ func handleStartScan(w http.ResponseWriter, r *http.Request) {
 		writeDetail(w, http.StatusInternalServerError, "could not create scan")
 		return
 	}
-	go runAndStore(id, target, scanType, portProfile)
+	safe.Go(func() { runAndStore(id, target, scanType, portProfile) })
 	writeJSON(w, http.StatusOK, map[string]string{"id": id, "status": "pending"})
 }
 
@@ -205,18 +228,24 @@ func handleAnalyze(w http.ResponseWriter, r *http.Request) {
 		writeDetail(w, http.StatusConflict, "Scan not completed yet")
 		return
 	}
+	// Idempotent: a double-click while analysis runs rejoins instead of
+	// spending a second LLM call.
+	if scan.AnalysisStatus != nil && *scan.AnalysisStatus == "analyzing" {
+		writeJSON(w, http.StatusOK, map[string]string{"id": id, "analysis_status": "analyzing"})
+		return
+	}
 	var body AnalyzeRequest
 	_ = json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&body) // optional
 	if err := db.SetAnalysisStatus(id, "analyzing"); err != nil {
 		writeDetail(w, http.StatusInternalServerError, "could not start analysis")
 		return
 	}
-	go runAnalysis(id, analyzer.LLMOptions{
+	safe.Go(func() { runAnalysis(id, analyzer.LLMOptions{
 		Provider: body.Provider,
 		APIKey:   body.APIKey,
 		Model:    body.Model,
 		BaseURL:  body.BaseURL,
-	})
+	}) })
 	writeJSON(w, http.StatusOK, map[string]string{"id": id, "analysis_status": "analyzing"})
 }
 
@@ -238,20 +267,6 @@ func handleDeleteScan(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"deleted": id})
 }
 
-func cors(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Same policy as the FastAPI CORSMiddleware: dev dashboard origin.
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
 // NewRouter wires the exact route table the dashboard expects.
 func NewRouter() http.Handler {
 	mux := http.NewServeMux()
@@ -269,7 +284,7 @@ func NewRouter() http.Handler {
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
-	return cors(mux)
+	return auth(cors(mux))
 }
 
 type panicError struct{ v any }

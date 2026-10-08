@@ -9,6 +9,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 
+	"fortify-go/internal/safe"
 	"fortify-go/internal/scanner/httpclient"
 
 	"io"
@@ -53,6 +54,7 @@ func ScanXSS(rawURL string) XSSResult {
 		wg.Add(1)
 		go func(p string) {
 			defer wg.Done()
+			defer safe.Recover() // a panicking param is skipped, rest continue
 			for _, payload := range payloads {
 				injected := InjectPayload(rawURL, payload)[p]
 				resp, err := httpclient.Shared.Get(injected)

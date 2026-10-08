@@ -163,13 +163,20 @@ func GetLLMResponse(prompt string, o LLMOptions) (string, error) {
 		}
 		return geminiResponse(prompt, model, key)
 	case "openai":
+		base := openaiBaseURL()
+		if custom := strings.TrimRight(strings.TrimSpace(o.BaseURL), "/"); custom != "" {
+			// A caller-supplied endpoint must never receive the server's key:
+			// otherwise anyone could point base_url at their own server and
+			// harvest OPENAI_API_KEY (and SSRF the backend). Require BYOK.
+			if strings.TrimSpace(o.APIKey) == "" {
+				return "", fmt.Errorf("a custom base URL requires your own API key (paste one in Counsel)")
+			}
+			base = custom
+			return openAICompatibleResponse(base, o.APIKey, model, prompt, "OpenAI")
+		}
 		key := o.APIKey
 		if key == "" {
 			key = os.Getenv("OPENAI_API_KEY")
-		}
-		base := openaiBaseURL()
-		if strings.TrimSpace(o.BaseURL) != "" {
-			base = strings.TrimRight(strings.TrimSpace(o.BaseURL), "/")
 		}
 		return openAICompatibleResponse(base, key, model, prompt, "OpenAI")
 	case "anthropic":
@@ -179,16 +186,24 @@ func GetLLMResponse(prompt string, o LLMOptions) (string, error) {
 		}
 		return anthropicResponse(prompt, model, key)
 	case "custom":
-		key := o.APIKey
-		if key == "" {
-			key = os.Getenv("CUSTOM_LLM_API_KEY")
-		}
 		base := customBaseURL(o.BaseURL)
 		if base == "" {
 			return "", fmt.Errorf("custom provider needs a base URL (set it in Counsel or CUSTOM_LLM_BASE_URL)")
 		}
 		if model == "" {
 			return "", fmt.Errorf("custom provider needs a model name (set it in Counsel or CUSTOM_LLM_MODEL)")
+		}
+		if fromRequest := strings.TrimRight(strings.TrimSpace(o.BaseURL), "/"); fromRequest != "" {
+			// Same rule as OpenAI above: a caller-supplied endpoint only ever
+			// gets a caller-supplied key — never the server's.
+			if strings.TrimSpace(o.APIKey) == "" {
+				return "", fmt.Errorf("a custom base URL requires your own API key (paste one in Counsel)")
+			}
+			return openAICompatibleResponse(base, o.APIKey, model, prompt, "custom endpoint")
+		}
+		key := o.APIKey
+		if key == "" {
+			key = os.Getenv("CUSTOM_LLM_API_KEY")
 		}
 		return openAICompatibleResponse(base, key, model, prompt, "custom endpoint")
 	case "ollama":

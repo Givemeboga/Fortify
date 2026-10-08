@@ -50,3 +50,29 @@ func TestNoPortsSectionNoFindings(t *testing.T) {
 		t.Fatalf("got %+v, want none", f)
 	}
 }
+
+func TestApplyScoresByIDDespiteReorder(t *testing.T) {
+	byID := map[string]int{"F1": 90, "F2": 50, "F3": 15}
+	ordered := []int{90, 50, 15}
+	// LLM reordered F3 first and dropped F2 — scores must follow the IDs.
+	items := []any{
+		map[string]any{"id": "F3", "vulnerability": "leaky"},
+		map[string]any{"id": "F1", "vulnerability": "sqli"},
+	}
+	applyScores(items, byID, ordered)
+	got := func(i int) int {
+		return items[i].(map[string]any)["severity"].(map[string]any)["score"].(int)
+	}
+	if got(0) != 15 || got(1) != 90 {
+		t.Fatalf("scores followed position, not ID: %v", items)
+	}
+}
+
+func TestApplyScoresMissingIDFallsBack(t *testing.T) {
+	byID := map[string]int{"F1": 90}
+	items := []any{map[string]any{"vulnerability": "no-id"}}
+	applyScores(items, byID, []int{70})
+	if got := items[0].(map[string]any)["severity"].(map[string]any)["score"].(int); got != 70 {
+		t.Fatalf("missing ID should fall back to position, got %d", got)
+	}
+}
